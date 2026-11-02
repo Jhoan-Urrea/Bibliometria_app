@@ -21,3 +21,9 @@ El aislamiento del dominio evita que formatos, transporte HTTP o motores de embe
 - No importar clases de otros módulos, frameworks ni adaptadores.
 - Mantener cobertura de pruebas igual o superior al 80%.
 - Verificar invariantes y casos límite con resultados reproducibles.
+
+## Preprocesamiento textual
+
+El paquete `com.bibliometria.core.text` ofrece `TextPreprocessor`, que recibe la ruta UTF-8 a
+`stopwords.txt` y procesa `Article` en título y resumen. `normalizeText` expone P-TEXTO; `process`
+genera P-TOKENS, frecuencias, conjunto y cadena canónica. Esta funcionalidad usa únicamente el JDK.
