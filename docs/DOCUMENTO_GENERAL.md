@@ -183,6 +183,7 @@ Las filas son identificadores iniciales de trazabilidad; cada paso ejecutable de
 | Fecha | Decisión / cambio | Motivo | Impacto | Referencia |
 |---|---|---|---|---|
 | 2026-10-31 | Un documento general y un README contractual por módulo | Evitar duplicidad y divergencia documental | Toda la documentación del proyecto | F0 |
+| 2026-11-01 | Registrar decisiones metodológicas como ADR dentro de este documento | Mantener una fuente arquitectónica única | Sección 8 | F0 |
 
 ## 7. Glosario
 
@@ -192,3 +193,77 @@ Las filas son identificadores iniciales de trazabilidad; cada paso ejecutable de
 | Embedding | Representación vectorial de una entrada textual generada por un modelo identificado |
 | Universo de análisis | Conjunto de documentos que satisface filtros y reglas declarados |
 | Fecha de corte | Fecha hasta la que se consideran datos externos, como citas |
+
+## 8. Registro de decisiones de arquitectura (ADR)
+
+Los ADR se mantienen en este documento para conservar una fuente única de arquitectura. Las decisiones indicadas como pendientes no deben tratarse como especificaciones ratificadas hasta completar la información y obtener aprobación del equipo.
+
+### ADR P-01: Idioma del corpus
+
+- **Estado:** Pendiente de decisión.
+- **Contexto:** El idioma condiciona la selección del corpus, la normalización lingüística, las consultas y la evaluación de resultados.
+- **Decisión:** Aún no se ha especificado el idioma del corpus. Debe acordarse antes de cerrar las reglas de ingesta y preprocesamiento.
+- **Consecuencias:** No se asume idioma único ni se aplican reglas lingüísticas específicas hasta ratificar esta decisión.
+
+### ADR P-02: FastText de 300 dimensiones
+
+- **Estado:** Aceptado como baseline, pendiente de concretar artefacto y versión.
+- **Contexto:** El proyecto requiere una representación vectorial reproducible para análisis bibliométrico semántico.
+- **Decisión:** Considerar FastText con vectores de 300 dimensiones como baseline. El corpus/modelo preentrenado, idioma, licencia y versión deben registrarse antes de generar resultados.
+- **Consecuencias:** La dimensión esperada es 300; la compatibilidad, la procedencia y la licencia del modelo siguen siendo criterios de aceptación.
+
+### ADR P-03: Sentence-BERT
+
+- **Estado:** Aceptado como alternativa semántica, pendiente de concretar checkpoint.
+- **Contexto:** FastText y Sentence-BERT representan estrategias distintas y deben evaluarse con el mismo conjunto de validación.
+- **Decisión:** Incluir Sentence-BERT en la evaluación. No se fija un nombre de modelo, dimensión o versión porque esos datos no están especificados.
+- **Consecuencias:** No se deben comparar resultados sin registrar checkpoint, versión, idioma, preprocesamiento y dimensión del embedding.
+
+### ADR P-04: Generación externa de embeddings
+
+- **Estado:** Propuesto; contrato pendiente.
+- **Contexto:** La generación de embeddings mediante una herramienta externa separa el coste de inferencia del ciclo de vida de la API Java.
+- **Decisión:** Usar un script externo como mecanismo de generación/importación, sujeto a definir formato, esquema, versiones, errores y validación de integridad.
+- **Consecuencias:** La API no debe depender de una ejecución implícita del script. Las entradas y salidas deben quedar versionadas o identificadas mediante manifiestos.
+
+### ADR P-05: Stemming desactivado
+
+- **Estado:** Aceptado como valor por defecto inicial.
+- **Contexto:** El stemming puede reducir variantes morfológicas, pero también alterar nombres propios y términos técnicos.
+- **Decisión:** Mantener el stemming desactivado por defecto. Un experimento podrá habilitarlo únicamente como configuración explícita y evaluada.
+- **Consecuencias:** La normalización debe registrar esta opción para permitir reproducir cada análisis.
+
+### ADR P-06: Búsqueda con mayúsculas por defecto
+
+- **Estado:** Aceptado como comportamiento inicial; reglas Unicode pendientes de prueba.
+- **Contexto:** Una normalización consistente de mayúsculas puede facilitar búsquedas sin distinguir capitalización.
+- **Decisión:** Normalizar a mayúsculas tanto la consulta como el texto indexado en el modo de búsqueda predeterminado.
+- **Consecuencias:** Deben conservarse los valores originales para presentación y trazabilidad; las reglas regionales y los caracteres Unicode requieren pruebas.
+
+### ADR P-07: Proveedor PaaS
+
+- **Estado:** Pendiente de selección.
+- **Contexto:** El despliegue gestionado requiere acordar restricciones de coste, región, persistencia, observabilidad y compatibilidad con contenedores.
+- **Decisión:** Se requiere un proveedor PaaS, pero el proveedor concreto no está indicado y no se presume ninguno.
+- **Consecuencias:** No se fijan servicios específicos ni configuración de despliegue hasta documentar proveedor, entorno y criterios de salida.
+
+### ADR P-08: Decisión pendiente de identificar
+
+- **Estado:** Pendiente de definición.
+- **Contexto:** La solicitud exige trazabilidad de P-01 a P-09, pero no aporta el tema de P-08.
+- **Decisión:** Reservar el identificador sin asignarle una decisión no respaldada.
+- **Consecuencias:** Completar contexto, decisión, alternativas y aprobación antes de considerar cerrado el registro.
+
+### ADR P-09: Decisión pendiente de identificar
+
+- **Estado:** Pendiente de definición.
+- **Contexto:** La solicitud exige trazabilidad de P-01 a P-09, pero no aporta el tema de P-09.
+- **Decisión:** Reservar el identificador sin asignarle una decisión no respaldada.
+- **Consecuencias:** Completar contexto, decisión, alternativas y aprobación antes de considerar cerrado el registro.
+
+## 9. Gobierno de datos y entrega de Fase 0
+
+- Los PDF de origen permanecen fuera del control de versiones en `data/raw/`; su inventario reproducible se genera con `scripts/generate_manifest.py`.
+- El manifiesto solo se considera válido si contiene exactamente 20 PDF con cabecera PDF válida y hashes SHA-256.
+- El uso de IA generativa se audita en `docs/gestion/registro-ia.md`.
+- La autorización del Gate F0 se evidencia mediante el acta en `docs/evidence/f0/acta-gate-f0.md`; una plantilla sin firmas no constituye aprobación.
