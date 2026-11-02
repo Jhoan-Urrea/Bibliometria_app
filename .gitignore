@@ -1,0 +1,20 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Maven
+target/
+
+# Frontend
+node_modules/
+dist/
+
+# Environment and local data
+.env
+.env.*
+!.env.example
+data/raw/
+
+# Logs
+*.log
