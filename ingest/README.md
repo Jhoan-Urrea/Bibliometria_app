@@ -20,3 +20,22 @@ La extracción y normalización se separan de los indicadores para que las métr
 - No implementar indicadores bibliométricos ni lógica HTTP.
 - Probar archivos válidos, incompletos, malformados y límites de entrada.
 - Registrar la procedencia y las transformaciones aplicadas a cada registro.
+
+## Ingesta del corpus PDF
+
+`PdfIngestorService` valida los 20 archivos de `data/raw/` contra los SHA-256 de
+`data/manifest.csv` y escribe los registros en JSON mediante una sustitución atómica del archivo.
+La salida contiene `id`, `title`, `authors`, `abstractText` y `verified` (inicializado en `false`).
+La extracción de texto ordena las posiciones del PDF antes de aplicar heurísticas de encabezados
+y metadatos, incluyendo artículos con texto dispuesto en columnas.
+
+Ejecuta el proceso local y valida la forma del JSON con:
+
+```sh
+mvn -pl ingest -am -Dtest=PdfIngestorServiceTest -Dsurefire.failIfNoSpecifiedTests=false test
+```
+
+Para producir el corpus desde el IDE, ejecuta `PdfIngestorService.main` con el directorio de
+trabajo configurado en la raíz del proyecto (`~/Documentos/Bibliometria_app`). El método escribe
+`data/corpus.json` allí y falla explícitamente si falta un PDF o no coincide su SHA-256 con el
+manifiesto.
