@@ -5,10 +5,10 @@ import java.util.Objects;
 
 /** Resultado reproducible de búsqueda y comparación de algoritmos sobre un corpus. */
 public record CorpusSearchResult(
-    String patron, List<CorpusArticleMatches> articulos, boolean coinciden) {
+        String patron, List<CorpusArticleMatches> articulos, boolean coinciden) {
 
-  public CorpusSearchResult {
-    Objects.requireNonNull(patron, "patron");
-    articulos = List.copyOf(Objects.requireNonNull(articulos, "articulos"));
-  }
+    public CorpusSearchResult {
+        Objects.requireNonNull(patron, "patron");
+        articulos = List.copyOf(Objects.requireNonNull(articulos, "articulos"));
+    }
 }

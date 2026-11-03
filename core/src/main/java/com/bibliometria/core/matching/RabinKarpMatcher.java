@@ -33,103 +33,106 @@ import java.util.Objects;
  */
 public final class RabinKarpMatcher implements StringMatcher {
 
-  private static final long BASE = 257;
-  private static final long MODULO = 1_000_000_007;
+    private static final long BASE = 257;
+    private static final long MODULO = 1_000_000_007;
 
-  private final TraceRecorder traceRecorder;
+    private final TraceRecorder traceRecorder;
 
-  public RabinKarpMatcher() {
-    this(TraceRecorder.sinTraza());
-  }
-
-  public RabinKarpMatcher(TraceRecorder traceRecorder) {
-    this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
-  }
-
-  @Override
-  public MatchResult buscarTodas(String texto, String patron) {
-    Objects.requireNonNull(texto, "texto");
-    Objects.requireNonNull(patron, "patron");
-
-    long inicioPreproceso = System.nanoTime();
-    long hashPatron = 0;
-    long potenciaMayor = 1;
-    for (int indice = 0; indice < patron.length(); indice++) {
-      hashPatron = (hashPatron * BASE + patron.charAt(indice)) % MODULO;
-      if (indice < patron.length() - 1) {
-        potenciaMayor = potenciaMayor * BASE % MODULO;
-      }
+    public RabinKarpMatcher() {
+        this(TraceRecorder.sinTraza());
     }
-    if (traceRecorder.habilitado()) {
-      traceRecorder.registrar(
-          "Rabin-Karp",
-          "hashPatron",
-          Map.of(
-              "patron", patron,
-              "base", BASE,
-              "modulo", MODULO,
-              "hash", hashPatron,
-              "potenciaMayor", potenciaMayor));
+
+    public RabinKarpMatcher(TraceRecorder traceRecorder) {
+        this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
     }
-    long nanosPreproceso = System.nanoTime() - inicioPreproceso;
 
-    long inicioBusqueda = System.nanoTime();
-    List<Integer> posiciones = new ArrayList<>();
-    long comparaciones = 0;
-    long hashCoincidencias = 0;
-    long falsosPositivos = 0;
+    @Override
+    public MatchResult buscarTodas(String texto, String patron) {
+        Objects.requireNonNull(texto, "texto");
+        Objects.requireNonNull(patron, "patron");
 
-    if (patron.isEmpty()) {
-      for (int posicion = 0; posicion <= texto.length(); posicion++) {
-        posiciones.add(posicion);
-      }
-    } else if (patron.length() <= texto.length()) {
-      long hashVentana = 0;
-      for (int indice = 0; indice < patron.length(); indice++) {
-        hashVentana = (hashVentana * BASE + texto.charAt(indice)) % MODULO;
-      }
-
-      int ultimaVentana = texto.length() - patron.length();
-      for (int inicio = 0; inicio <= ultimaVentana; inicio++) {
-        boolean hashCoincide = hashVentana == hashPatron;
-        if (traceRecorder.habilitado()) {
-          traceRecorder.registrar(
-              "Rabin-Karp",
-              "ventana",
-              Map.of(
-                  "inicio", inicio,
-                  "hash", hashVentana,
-                  "coincideHash", hashCoincide));
-        }
-        if (hashCoincide) {
-          hashCoincidencias++;
-          boolean coincide = true;
-          for (int indice = 0; indice < patron.length(); indice++) {
-            comparaciones++;
-            if (texto.charAt(inicio + indice) != patron.charAt(indice)) {
-              coincide = false;
-              break;
+        long inicioPreproceso = System.nanoTime();
+        long hashPatron = 0;
+        long potenciaMayor = 1;
+        for (int indice = 0; indice < patron.length(); indice++) {
+            hashPatron = (hashPatron * BASE + patron.charAt(indice)) % MODULO;
+            if (indice < patron.length() - 1) {
+                potenciaMayor = potenciaMayor * BASE % MODULO;
             }
-          }
-          if (coincide) {
-            posiciones.add(inicio);
-          } else {
-            falsosPositivos++;
-          }
+        }
+        if (traceRecorder.habilitado()) {
+            traceRecorder.registrar(
+                    "Rabin-Karp",
+                    "hashPatron",
+                    Map.of(
+                            "patron", patron,
+                            "base", BASE,
+                            "modulo", MODULO,
+                            "hash", hashPatron,
+                            "potenciaMayor", potenciaMayor));
+        }
+        long nanosPreproceso = System.nanoTime() - inicioPreproceso;
+
+        long inicioBusqueda = System.nanoTime();
+        List<Integer> posiciones = new ArrayList<>();
+        long comparaciones = 0;
+        long hashCoincidencias = 0;
+        long falsosPositivos = 0;
+
+        if (patron.isEmpty()) {
+            for (int posicion = 0; posicion <= texto.length(); posicion++) {
+                posiciones.add(posicion);
+            }
+        } else if (patron.length() <= texto.length()) {
+            long hashVentana = 0;
+            for (int indice = 0; indice < patron.length(); indice++) {
+                hashVentana = (hashVentana * BASE + texto.charAt(indice)) % MODULO;
+            }
+
+            int ultimaVentana = texto.length() - patron.length();
+            for (int inicio = 0; inicio <= ultimaVentana; inicio++) {
+                boolean hashCoincide = hashVentana == hashPatron;
+                if (traceRecorder.habilitado()) {
+                    traceRecorder.registrar(
+                            "Rabin-Karp",
+                            "ventana",
+                            Map.of(
+                                    "inicio", inicio,
+                                    "hash", hashVentana,
+                                    "coincideHash", hashCoincide));
+                }
+                if (hashCoincide) {
+                    hashCoincidencias++;
+                    boolean coincide = true;
+                    for (int indice = 0; indice < patron.length(); indice++) {
+                        comparaciones++;
+                        if (texto.charAt(inicio + indice) != patron.charAt(indice)) {
+                            coincide = false;
+                            break;
+                        }
+                    }
+                    if (coincide) {
+                        posiciones.add(inicio);
+                    } else {
+                        falsosPositivos++;
+                    }
+                }
+
+                if (inicio < ultimaVentana) {
+                    long caracterInicial = texto.charAt(inicio);
+                    long hashSinInicial =
+                            (hashVentana - caracterInicial * potenciaMayor % MODULO + MODULO)
+                                    % MODULO;
+                    hashVentana =
+                            (hashSinInicial * BASE + texto.charAt(inicio + patron.length()))
+                                    % MODULO;
+                }
+            }
         }
 
-        if (inicio < ultimaVentana) {
-          long caracterInicial = texto.charAt(inicio);
-          long hashSinInicial =
-              (hashVentana - caracterInicial * potenciaMayor % MODULO + MODULO) % MODULO;
-          hashVentana = (hashSinInicial * BASE + texto.charAt(inicio + patron.length())) % MODULO;
-        }
-      }
+        long nanosBusqueda = System.nanoTime() - inicioBusqueda;
+        Map<String, Object> extras =
+                Map.of("hashCoincidencias", hashCoincidencias, "falsosPositivos", falsosPositivos);
+        return new MatchResult(posiciones, nanosPreproceso, nanosBusqueda, comparaciones, extras);
     }
-
-    long nanosBusqueda = System.nanoTime() - inicioBusqueda;
-    Map<String, Object> extras =
-        Map.of("hashCoincidencias", hashCoincidencias, "falsosPositivos", falsosPositivos);
-    return new MatchResult(posiciones, nanosPreproceso, nanosBusqueda, comparaciones, extras);
-  }
 }
