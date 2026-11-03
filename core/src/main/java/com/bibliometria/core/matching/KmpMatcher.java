@@ -28,77 +28,79 @@ import java.util.Objects;
  */
 public final class KmpMatcher implements StringMatcher {
 
-  private final TraceRecorder traceRecorder;
+    private final TraceRecorder traceRecorder;
 
-  public KmpMatcher() {
-    this(TraceRecorder.sinTraza());
-  }
-
-  public KmpMatcher(TraceRecorder traceRecorder) {
-    this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
-  }
-
-  @Override
-  public MatchResult buscarTodas(String texto, String patron) {
-    Objects.requireNonNull(texto, "texto");
-    Objects.requireNonNull(patron, "patron");
-
-    long inicioPreproceso = System.nanoTime();
-    int[] lps = construirLps(patron);
-    if (traceRecorder.habilitado()) {
-      traceRecorder.registrar(
-          "KMP", "tablaLPS", Map.of("patron", patron, "lps", Arrays.stream(lps).boxed().toList()));
+    public KmpMatcher() {
+        this(TraceRecorder.sinTraza());
     }
-    long nanosPreproceso = System.nanoTime() - inicioPreproceso;
 
-    long inicioBusqueda = System.nanoTime();
-    List<Integer> posiciones = new ArrayList<>();
-    long comparaciones = 0;
-    if (patron.isEmpty()) {
-      for (int posicion = 0; posicion <= texto.length(); posicion++) {
-        posiciones.add(posicion);
-      }
-    } else {
-      int indiceTexto = 0;
-      int indicePatron = 0;
-      while (indiceTexto < texto.length()) {
-        comparaciones++;
-        if (texto.charAt(indiceTexto) == patron.charAt(indicePatron)) {
-          indiceTexto++;
-          indicePatron++;
-          if (indicePatron == patron.length()) {
-            posiciones.add(indiceTexto - indicePatron);
-            indicePatron = lps[indicePatron - 1];
-          }
-        } else if (indicePatron > 0) {
-          indicePatron = lps[indicePatron - 1];
-        } else {
-          indiceTexto++;
+    public KmpMatcher(TraceRecorder traceRecorder) {
+        this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
+    }
+
+    @Override
+    public MatchResult buscarTodas(String texto, String patron) {
+        Objects.requireNonNull(texto, "texto");
+        Objects.requireNonNull(patron, "patron");
+
+        long inicioPreproceso = System.nanoTime();
+        int[] lps = construirLps(patron);
+        if (traceRecorder.habilitado()) {
+            traceRecorder.registrar(
+                    "KMP",
+                    "tablaLPS",
+                    Map.of("patron", patron, "lps", Arrays.stream(lps).boxed().toList()));
         }
-      }
-    }
-    long nanosBusqueda = System.nanoTime() - inicioBusqueda;
+        long nanosPreproceso = System.nanoTime() - inicioPreproceso;
 
-    return new MatchResult(posiciones, nanosPreproceso, nanosBusqueda, comparaciones, Map.of());
-  }
+        long inicioBusqueda = System.nanoTime();
+        List<Integer> posiciones = new ArrayList<>();
+        long comparaciones = 0;
+        if (patron.isEmpty()) {
+            for (int posicion = 0; posicion <= texto.length(); posicion++) {
+                posiciones.add(posicion);
+            }
+        } else {
+            int indiceTexto = 0;
+            int indicePatron = 0;
+            while (indiceTexto < texto.length()) {
+                comparaciones++;
+                if (texto.charAt(indiceTexto) == patron.charAt(indicePatron)) {
+                    indiceTexto++;
+                    indicePatron++;
+                    if (indicePatron == patron.length()) {
+                        posiciones.add(indiceTexto - indicePatron);
+                        indicePatron = lps[indicePatron - 1];
+                    }
+                } else if (indicePatron > 0) {
+                    indicePatron = lps[indicePatron - 1];
+                } else {
+                    indiceTexto++;
+                }
+            }
+        }
+        long nanosBusqueda = System.nanoTime() - inicioBusqueda;
 
-  /** Construye en O(m) la tabla de prefijos propios que también son sufijos. */
-  public static int[] construirLps(String patron) {
-    Objects.requireNonNull(patron, "patron");
-    int[] lps = new int[patron.length()];
-    int longitudPrefijo = 0;
-    int indice = 1;
-    while (indice < patron.length()) {
-      if (patron.charAt(indice) == patron.charAt(longitudPrefijo)) {
-        lps[indice] = ++longitudPrefijo;
-        indice++;
-      } else if (longitudPrefijo > 0) {
-        longitudPrefijo = lps[longitudPrefijo - 1];
-      } else {
-        lps[indice] = 0;
-        indice++;
-      }
+        return new MatchResult(posiciones, nanosPreproceso, nanosBusqueda, comparaciones, Map.of());
     }
-    return lps;
-  }
+
+    /** Construye en O(m) la tabla de prefijos propios que también son sufijos. */
+    public static int[] construirLps(String patron) {
+        Objects.requireNonNull(patron, "patron");
+        int[] lps = new int[patron.length()];
+        int longitudPrefijo = 0;
+        int indice = 1;
+        while (indice < patron.length()) {
+            if (patron.charAt(indice) == patron.charAt(longitudPrefijo)) {
+                lps[indice] = ++longitudPrefijo;
+                indice++;
+            } else if (longitudPrefijo > 0) {
+                longitudPrefijo = lps[longitudPrefijo - 1];
+            } else {
+                lps[indice] = 0;
+                indice++;
+            }
+        }
+        return lps;
+    }
 }
