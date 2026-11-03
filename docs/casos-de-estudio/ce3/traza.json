@@ -1,0 +1,133 @@
+[
+  {
+    "algoritmo": "KMP",
+    "paso": "tablaLPS",
+    "datos": {
+      "patron": "artificial intelligence",
+      "lps": [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  },
+  {
+    "algoritmo": "Boyer-Moore",
+    "paso": "tablas",
+    "datos": {
+      "patron": "artificial intelligence",
+      "desplazamientoTrasOcurrencia": 23,
+      "buenSufijo": [23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 3, 1],
+      "ultimaAparicion": {
+        "a": 8,
+        "r": 1,
+        "t": 13,
+        "i": 17,
+        "f": 4,
+        "c": 21,
+        "l": 16,
+        " ": 10,
+        "n": 20,
+        "e": 22,
+        "g": 18
+      }
+    }
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "hashPatron",
+    "datos": {
+      "patron": "artificial intelligence",
+      "hash": 927121337,
+      "base": 257,
+      "modulo": 1000000007,
+      "potenciaMayor": 588438787
+    }
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 0, "hash": 354609368}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 1, "hash": 866109429}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 2, "hash": 269571392}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 3, "hash": 292169733}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 4, "hash": 67064917}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 5, "hash": 71291606}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 6, "hash": 673989889}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 7, "hash": 109913120}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": true, "inicio": 8, "hash": 927121337}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 9, "hash": 79763535}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 10, "hash": 419767549}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 11, "hash": 343264159}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 12, "hash": 198332278}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 13, "hash": 637140694}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 14, "hash": 724601207}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 15, "hash": 574556165}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 16, "hash": 640377449}
+  },
+  {
+    "algoritmo": "Rabin-Karp",
+    "paso": "ventana",
+    "datos": {"coincideHash": false, "inicio": 17, "hash": 386584837}
+  }
+]
