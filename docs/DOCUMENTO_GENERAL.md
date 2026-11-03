@@ -127,6 +127,13 @@ Una red bibliográfica se representa como \(G=(V,E,W)\), donde los nodos y las a
 | P0.2 | F0 / Calidad | Reglas de compilación y calidad inicial | AR-F0-02 | `core` | Java 21; pruebas y cobertura objetivo documentadas | Reporte de build |
 | P1.1 | F1 / Dominio | Modelo bibliográfico y contratos | AR-F1-01 | `core` | Contratos y validaciones cubiertos por pruebas | Pruebas de `core` |
 | P2.1 | F2 / Ingesta | Adaptadores de fuentes acordadas | AR-F2-01 | `ingest` | Archivos válidos, inválidos y límites tienen resultado verificable | Pruebas de ingesta |
+| P2.8 | F2 / Búsqueda exacta | Paridad de KMP, Boyer-Moore y Rabin-Karp frente al oráculo en 10.000 casos | AR-F2-06 | `core` | Semilla fija 42; suite completa bajo 60 segundos | `PatternMatcherStressTest` |
+| P2.9 | F2 / Búsqueda exacta | Escaneo automático de APIs de búsqueda prohibidas | AR-F2-07 | `core` | Fuentes productivas limpias y escáner detecta una llamada sembrada | `ForbiddenApiScanTest` |
+| P2.10 | F2 / Búsqueda exacta | Búsqueda y resaltado de coincidencias sobre textos del corpus | AR-F2-08 | `core` | Posiciones por algoritmo y bandera de paridad por artículo | `CorpusSearchServiceTest` |
+| P2.11 | F2 / Búsqueda exacta | Registro y exportación JSON de pasos internos | AR-F2-09 | `core` | Trazas de LPS, tablas BM y hashes RK exportables | `TraceRecorderTest` |
+| P2.12 | F2 / Búsqueda exacta | Evidencia reproducible del caso de estudio 3 | AR-F2-10 | `docs/casos-de-estudio/ce3` | Patrón, corpus, posiciones, fragmentos y limitaciones documentados | Informe CE3 y traza JSON |
+| P2.13 | F2 / Búsqueda exacta | Correspondencia de fórmulas, código y complejidad | AR-F2-11 | `core` | Javadocs relacionan variables DF §7 con líneas Java y anotan cotas de §7.4 | Javadocs de KMP, Boyer-Moore y Rabin-Karp |
+| P2.14 | F2 / Búsqueda exacta | Gate de calidad y cierre | AR-F2-12 | `core` | `mvn spotless:apply` limpio; `mvn clean verify` en verde; cobertura `core.matching` >= 85 % | Build Maven y JaCoCo |
 | P3.1 | F3 / Semántica | Generación o consumo de embeddings | AR-F3-01 | `embeddings` | Dimensión, modelo y fallos quedan explícitos y trazables | Pruebas y metadatos |
 | P4.1 | F4 / API | Casos de uso y contratos HTTP | AR-F4-01 | `api` | Validación de entrada y respuestas documentadas | Pruebas de API |
 | P5.1 | F5 / Interfaz | Experiencia de consulta y visualización | AR-F5-01 | `web` | Flujos principales consumen contratos publicados | Pruebas de interfaz |
