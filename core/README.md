@@ -19,6 +19,8 @@ El aislamiento del dominio evita que formatos, transporte HTTP o motores de embe
 
 - No declarar dependencias de producción.
 - No importar clases de otros módulos, frameworks ni adaptadores.
+- Puede ser consumido por `ingest`, `embeddings`, `api`, `benchmark` y `tools`; no depende de
+  ninguno de ellos.
 - Mantener cobertura de pruebas igual o superior al 80%.
 - Verificar invariantes y casos límite con resultados reproducibles.
 
@@ -45,6 +47,11 @@ de KMP, Boyer-Moore y Rabin-Karp por artículo y establece `coinciden` solo cuan
 son idénticas en todos ellos. Cada ocurrencia genera un fragmento de hasta 40 unidades UTF-16 y
 un intervalo resaltado relativo al inicio del fragmento. El cargador del JSON del corpus queda a
 cargo de la capa de ingesta; `core` no incorpora un parser ni dependencias de producción.
+
+El contrato de `MatchResult` incluye `extras`, un mapa inmutable para métricas específicas del
+algoritmo. Para Rabin-Karp contiene `hashCoincidencias` y `falsosPositivos`; `codigo(c)` corresponde
+al valor UTF-16 de `charAt` y no requiere una dependencia externa. Ver
+[`ADR-012`](../docs/adr/ADR-012-contrato-busqueda.md).
 
 Los matchers aceptan opcionalmente un `TraceRecorder`. `JsonTraceRecorder` exporta eventos JSON
 con la tabla LPS de KMP, las tablas de carácter malo y sufijo bueno de Boyer-Moore y los hashes

@@ -4,6 +4,28 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "${HTTPS_PORT:-8443}:8443"
     environment:
-      SERVER_PORT: 8080
+      SERVER_PORT: 8443
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /run/secrets/tls_certificate
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /run/secrets/tls_private_key
+      JAVA_TOOL_OPTIONS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+    mem_limit: 512m
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    secrets:
+      - tls_certificate
+      - tls_private_key
+    restart: unless-stopped
+
+secrets:
+  tls_certificate:
+    file: ${TLS_CERT_FILE:?Set TLS_CERT_FILE to a PEM certificate path}
+  tls_private_key:
+    file: ${TLS_KEY_FILE:?Set TLS_KEY_FILE to a PEM private-key path}

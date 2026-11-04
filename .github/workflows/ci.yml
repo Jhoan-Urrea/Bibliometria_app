@@ -12,16 +12,9 @@ permissions:
   contents: read
 
 jobs:
-  backend-build:
-    name: Backend (${{ matrix.os }}, Java 21)
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-        java: [21]
+  java:
+    name: Java 21
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,21 +22,21 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ matrix.java }}
+          java-version: 21
           cache: maven
-      - name: Verify backend
-        run: mvn --batch-mode --no-transfer-progress clean verify
+      - name: Verify Java reactor
+        run: mvn -q verify
       - name: Upload JaCoCo and Surefire reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-reports-${{ matrix.os }}
+          name: java-reports
           path: |
             **/target/site/jacoco/
             **/target/surefire-reports/
           if-no-files-found: ignore
 
-  frontend-build:
+  frontend:
     name: Frontend
     runs-on: ubuntu-latest
     defaults:

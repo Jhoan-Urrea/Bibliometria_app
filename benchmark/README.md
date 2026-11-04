@@ -17,6 +17,15 @@ Una medición de rendimiento solo es interpretable si identifica el conjunto de 
 ## Criterios de independencia
 
 - Depender únicamente de `core` para las operaciones del dominio.
+- No depender de `api`, `ingest` ni `tools`. Las herramientas fuera de línea pueden leer resultados
+  guardados mediante un formato de archivo, sin acoplamiento Maven.
 - Separar medición de pruebas unitarias y de lógica de producción.
 - Evitar datos locales pesados o sensibles en el repositorio.
 - Documentar configuración, unidad y limitaciones de cada resultado.
+
+## Resultados guardados
+
+DF v2.1 requiere que `tools` pueda leer resultados de benchmark guardados. Antes de producir o
+consumir esos resultados debe definirse y versionarse su esquema, incluyendo operación, parámetros,
+unidad, configuración, versión del código y entorno. El lector no debe requerir una dependencia de
+este módulo.

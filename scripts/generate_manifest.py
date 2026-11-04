@@ -13,7 +13,7 @@ from pathlib import Path
 
 
 EXPECTED_PDF_COUNT = 20
-CSV_FIELDS = ("id", "nombre_archivo", "sha256")
+CSV_FIELDS = ("id", "filename", "sha256")
 
 
 def sha256_file(path: Path) -> str:
@@ -70,7 +70,7 @@ def main() -> int:
             records.append(
                 {
                     "id": f"A{index:02d}",
-                    "nombre_archivo": pdf_path.name,
+                    "filename": pdf_path.name,
                     "sha256": sha256_file(pdf_path),
                 }
             )
@@ -92,7 +92,9 @@ def main() -> int:
             delete=False,
         ) as temporary_file:
             temporary_path = Path(temporary_file.name)
-            writer = csv.DictWriter(temporary_file, fieldnames=CSV_FIELDS)
+            writer = csv.DictWriter(
+                temporary_file, fieldnames=CSV_FIELDS, lineterminator="\n"
+            )
             writer.writeheader()
             writer.writerows(records)
         os.replace(temporary_path, output_path)
