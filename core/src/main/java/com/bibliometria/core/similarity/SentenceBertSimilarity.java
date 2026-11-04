@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-/** Similitud IA-2 obtenida al convertir distancia euclidiana a {@code 1 / (1 + d)}. */
+/** Cosine similarity for normalized 384-dimensional IA-2 embeddings. */
 public final class SentenceBertSimilarity implements SimilarityAlgorithm {
 
     private final Map<String, double[]> documentVectors;
@@ -23,11 +23,12 @@ public final class SentenceBertSimilarity implements SimilarityAlgorithm {
         Objects.requireNonNull(documentB, "documentB");
         double[] vectorA = requireVector(documentA.id());
         double[] vectorB = requireVector(documentB.id());
-        double distance = 0.0;
+        double cosine = 0.0;
         for (int index = 0; index < vectorA.length; index++) {
-            distance = Math.hypot(distance, vectorA[index] - vectorB[index]);
+            cosine += vectorA[index] * vectorB[index];
         }
-        return new SimilarityResult(distance, 1.0 / (1.0 + distance));
+        cosine = Math.max(-1.0, Math.min(1.0, cosine));
+        return new SimilarityResult(cosine, (cosine + 1.0) / 2.0);
     }
 
     private double[] requireVector(String id) {
