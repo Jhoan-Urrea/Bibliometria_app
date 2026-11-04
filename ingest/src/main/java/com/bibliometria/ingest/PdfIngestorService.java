@@ -80,7 +80,7 @@ public class PdfIngestorService {
      * Valida los PDF indicados en el manifiesto y crea el corpus JSON.
      *
      * @param rawDirectory directorio que contiene los PDF
-     * @param manifestPath manifiesto CSV con columnas id,nombre_archivo,sha256
+     * @param manifestPath manifiesto CSV con columnas id,filename,sha256
      * @param outputPath destino del corpus JSON
      * @return los 20 registros extraídos, en el orden del manifiesto
      * @throws IOException si hay un error de lectura, validación o escritura
@@ -133,8 +133,8 @@ public class PdfIngestorService {
                 Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8)) {
             String header = reader.readLine();
             if (header == null
-                    || !parseCsvLine(header).equals(List.of("id", "nombre_archivo", "sha256"))) {
-                throw new IOException("El manifiesto debe iniciar con id,nombre_archivo,sha256");
+                    || !parseCsvLine(header).equals(List.of("id", "filename", "sha256"))) {
+                throw new IOException("El manifiesto debe iniciar con id,filename,sha256");
             }
 
             String line;

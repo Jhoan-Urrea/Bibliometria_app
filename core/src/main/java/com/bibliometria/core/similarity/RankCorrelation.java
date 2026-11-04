@@ -96,8 +96,12 @@ public final class RankCorrelation {
             double averageRank = ((start + 1) + end) / 2.0;
             for (int index = start; index < end; index++) {
                 PairScore pair = ordered.get(index);
-                int pairIndex = pair.row() * 20 - pair.row() * (pair.row() + 1) / 2
-                        + pair.column() - pair.row() - 1;
+                int pairIndex =
+                        pair.row() * 20
+                                - pair.row() * (pair.row() + 1) / 2
+                                + pair.column()
+                                - pair.row()
+                                - 1;
                 ranks[pairIndex] = averageRank;
             }
             start = end;

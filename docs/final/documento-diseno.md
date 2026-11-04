@@ -38,7 +38,7 @@ calculados en una caché concurrente indexada por algoritmo y par de IDs.
 | TF-IDF | Vector disperso `tf(t,d) * ln(20 / df(t))`; `N=20` se mantiene fijo para todo el corpus. La comparación es coseno. | Coseno acotado a `[0, 1]` |
 | Jaccard | Intersección dividida por unión de los conjuntos de tokens; dos conjuntos vacíos se consideran idénticos. | `|A ∩ B| / |A ∪ B|` |
 | FastText (IA-1) | Vector documental de 300 dimensiones, calculado como promedio de los vectores FastText de los tokens y cargado por ID. | `(coseno + 1) / 2` |
-| Sentence-BERT (IA-2) | Embedding documental `all-MiniLM-L6-v2` de 384 dimensiones, unitario y cargado por ID. | `1 / (1 + distancia euclidiana)` |
+| Sentence-Transformers `all-MiniLM-L6-v2` (IA-2) | Embedding documental de 384 dimensiones, unitario y cargado por ID. | `1 / (1 + distancia euclidiana)` |
 
 Para comparar el ordenamiento producido por cada método, se convierten las 190 similitudes
 normalizadas de cada algoritmo a rangos promedio en caso de empates y se calcula la correlación de

@@ -85,7 +85,9 @@ public final class SimilarityMatrixService {
         return Map.copyOf(matrices);
     }
 
-    /** @return número de resultados actualmente guardados en la caché */
+    /**
+     * @return número de resultados actualmente guardados en la caché
+     */
     public int cachedPairCount() {
         return cache.size();
     }

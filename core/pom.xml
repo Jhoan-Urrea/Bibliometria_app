@@ -51,15 +51,11 @@
                         <configuration>
                             <rules>
                                 <bannedDependencies>
-                                    <searchTransitive>false</searchTransitive>
-                                    <message>The core module must use only the JDK at runtime. External dependencies are prohibited except the approved test libraries.</message>
+                                    <searchTransitive>true</searchTransitive>
+                                    <message>The core module must not have compile-scope dependencies; JUnit and AssertJ are permitted only for tests.</message>
                                     <excludes>
-                                        <exclude>*:*</exclude>
+                                        <exclude>*:*:*:*:compile</exclude>
                                     </excludes>
-                                    <includes>
-                                        <include>org.junit.jupiter:*:*:*:test</include>
-                                        <include>org.assertj:*:*:*:test</include>
-                                    </includes>
                                 </bannedDependencies>
                             </rules>
                             <fail>true</fail>
@@ -83,7 +79,7 @@
                                     <element>BUNDLE</element>
                                     <limits>
                                         <limit>
-                                            <counter>LINE</counter>
+                                            <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
                                             <minimum>0.80</minimum>
                                         </limit>

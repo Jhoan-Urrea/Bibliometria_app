@@ -17,6 +17,7 @@ La extracción y normalización se separan de los indicadores para que las métr
 ## Criterios de independencia
 
 - Mantener PDFBox y Jackson confinados al adaptador.
+- Depender de `core` cuando necesite sus contratos; `api` y `core` no dependen de `ingest`.
 - No implementar indicadores bibliométricos ni lógica HTTP.
 - Probar archivos válidos, incompletos, malformados y límites de entrada.
 - Registrar la procedencia y las transformaciones aplicadas a cada registro.

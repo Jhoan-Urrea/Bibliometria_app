@@ -33,15 +33,14 @@ Fuentes bibliográficas
         |
         v
      ingest  ---> registros normalizados ---> core
-                                             /    \
-                                            v      v
-                                      embeddings  benchmark
-                                            \      /
-                                             v    v
-                                               api
-                                                |
-                                                v
-                                               web
+                                             / | \
+                                            v  v  v
+                                      embeddings benchmark tools
+                                            \     /
+                                             v   v
+                                               api ---> web
+
+tools también lee artefactos guardados de benchmark mediante archivos, sin depender de benchmark.
 ```
 
 `core` contiene el modelo y las reglas de dominio independientes de infraestructura. `ingest` adapta formatos de entrada; `embeddings` integra el procesamiento semántico; `api` coordina y publica casos de uso; `benchmark` mide el comportamiento; `web` consume la API.
@@ -53,11 +52,14 @@ Fuentes bibliográficas
 | `core` | Dominio, contratos y cálculos bibliométricos puros | Ninguna |
 | `ingest` | Lectura y adaptación de documentos y metadatos | `core` cuando sea necesario |
 | `embeddings` | Representaciones vectoriales y operaciones semánticas | `core` |
+| `tools` | Utilidades fuera de línea y lectura de artefactos guardados | `core`, `embeddings`, Jackson |
 | `api` | Casos de uso y exposición HTTP | `core`, `embeddings` |
 | `benchmark` | Medición reproducible de rendimiento | `core` |
 | `web` | Interfaz de usuario React + TypeScript | API HTTP |
 
 `core` solo puede depender del JDK en producción. Las dependencias de prueba permitidas se limitan a las centralizadas en el POM raíz.
+`api` y `core` no dependen de `ingest` ni de `benchmark`. `tools` no depende de `api`,
+`benchmark` ni `ingest`; la comunicación con resultados de benchmark se realiza mediante archivos.
 
 ### 2.3 Principios y decisiones
 
@@ -66,7 +68,9 @@ Fuentes bibliográficas
 - Versiones de dependencias gestionadas desde el POM raíz.
 - Contratos públicos explícitos, validables y documentados en el README del módulo correspondiente.
 - Las operaciones deterministas deben producir resultados reproducibles con los mismos datos, parámetros y versión de algoritmo.
-- Los cambios de arquitectura, metodología o trazabilidad se registran aquí; no se crean documentos generales paralelos en la raíz.
+- Las responsabilidades y contratos se resumen aquí y en el README de cada módulo. Las decisiones
+  formales se registran en `docs/adr/`; el historial de cambios de formulación se mantiene en
+  `docs/gestion/cambios-df.md`.
 
 ### 2.4 Calidad y operación
 
@@ -203,28 +207,22 @@ Las filas son identificadores iniciales de trazabilidad; cada paso ejecutable de
 
 ## 8. Registro de decisiones de arquitectura (ADR)
 
-Los ADR se mantienen en este documento para conservar una fuente única de arquitectura. Las decisiones indicadas como pendientes no deben tratarse como especificaciones ratificadas hasta completar la información y obtener aprobación del equipo.
+Las decisiones formales se mantienen en archivos separados de `docs/adr/`, con Contexto, Opciones,
+Decisión y Consecuencias. Este documento conserva la visión y trazabilidad generales; las
+decisiones pendientes del registro anterior deben migrarse o marcarse como históricas antes de
+considerarlas vigentes.
 
-### ADR P-01: Idioma del corpus
+### ADR-001: Idioma del corpus
 
-- **Estado:** Pendiente de decisión.
-- **Contexto:** El idioma condiciona la selección del corpus, la normalización lingüística, las consultas y la evaluación de resultados.
-- **Decisión:** Aún no se ha especificado el idioma del corpus. Debe acordarse antes de cerrar las reglas de ingesta y preprocesamiento.
-- **Consecuencias:** No se asume idioma único ni se aplican reglas lingüísticas específicas hasta ratificar esta decisión.
+La decisión vigente declara el inglés para el corpus de la versión actual. Véase
+[ADR-001](adr/ADR-001-idioma-corpus.md); su aplicación a nuevas incorporaciones requiere revisar
+el idioma y la compatibilidad de los modelos.
 
-### ADR P-02: FastText de 300 dimensiones
+### ADR-004 y ADR-005: Modelos semánticos
 
-- **Estado:** Aceptado como baseline, pendiente de concretar artefacto y versión.
-- **Contexto:** El proyecto requiere una representación vectorial reproducible para análisis bibliométrico semántico.
-- **Decisión:** Considerar FastText con vectores de 300 dimensiones como baseline. El corpus/modelo preentrenado, idioma, licencia y versión deben registrarse antes de generar resultados.
-- **Consecuencias:** La dimensión esperada es 300; la compatibilidad, la procedencia y la licencia del modelo siguen siendo criterios de aceptación.
-
-### ADR P-03: Sentence-BERT
-
-- **Estado:** Aceptado como alternativa semántica, pendiente de concretar checkpoint.
-- **Contexto:** FastText y Sentence-BERT representan estrategias distintas y deben evaluarse con el mismo conjunto de validación.
-- **Decisión:** Incluir Sentence-BERT en la evaluación. No se fija un nombre de modelo, dimensión o versión porque esos datos no están especificados.
-- **Consecuencias:** No se deben comparar resultados sin registrar checkpoint, versión, idioma, preprocesamiento y dimensión del embedding.
+Las decisiones vigentes seleccionan FastText con subpalabras para IA-1 y
+Sentence-Transformers `all-MiniLM-L6-v2` para IA-2. Véanse
+[ADR-004](adr/ADR-004-modelo-ia1.md) y [ADR-005](adr/ADR-005-modelo-ia2.md).
 
 ### ADR P-04: Generación externa de embeddings
 

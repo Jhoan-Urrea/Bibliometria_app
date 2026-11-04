@@ -88,8 +88,7 @@ class ClassicSimilarityTest {
                         * log10
                         * log10
                         / Math.sqrt((4.0 * log10 * log10 + log20 * log20) * (2.0 * log10 * log10));
-        return Stream.of(
-                Arguments.of(List.copyOf(corpus), corpusA, corpusB, expected));
+        return Stream.of(Arguments.of(List.copyOf(corpus), corpusA, corpusB, expected));
     }
 
     @ParameterizedTest
@@ -171,8 +170,11 @@ class ClassicSimilarityTest {
 
     @Test
     void requiresTheCompleteTwentyDocumentCorpusForTfIdf() {
-        assertThat(org.assertj.core.api.Assertions.catchThrowable(
-                        () -> new TfIdfSimilarity(List.of(document("C1", "", List.of("token"))))))
+        assertThat(
+                        org.assertj.core.api.Assertions.catchThrowable(
+                                () ->
+                                        new TfIdfSimilarity(
+                                                List.of(document("C1", "", List.of("token"))))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("exactly 20 documents");
     }

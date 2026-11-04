@@ -17,6 +17,14 @@ La API publica indicadores calculados conforme a las definiciones únicas de `do
 ## Criterios de independencia
 
 - Mantener transporte, serialización y validación HTTP fuera de `core`.
+- Depender de `core` y `embeddings`, nunca de `ingest` o `benchmark`.
 - Evitar que controladores contengan cálculos bibliométricos.
 - Probar contratos, validaciones, códigos de estado y errores.
 - No depender de detalles internos del frontend.
+
+## Rutas de DF v2.1
+
+`GET /api/health` es la ruta de salud implementada. DF v2.1 registra además
+`/api/similarity/trace`, `/api/search/trace` y `/api/similarity/rank-correlation`; se consideran
+pendientes hasta contar con controladores y pruebas de contrato. Sus criterios y límites están
+registrados en [`ADR-012`](../docs/adr/ADR-012-contrato-busqueda.md).
