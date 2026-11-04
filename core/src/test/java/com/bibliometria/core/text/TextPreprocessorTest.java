@@ -3,6 +3,7 @@ package com.bibliometria.core.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -12,14 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class TextPreprocessorTest {
-
-    @TempDir Path temporaryDirectory;
 
     @ParameterizedTest
     @MethodSource("normalizationCases")
@@ -95,7 +93,21 @@ class TextPreprocessorTest {
                 newPreprocessor("")
                         .process(new Article("A04", "", "", "GPT-4 fine-tuning 42,007.5?!", false));
 
-        assertThat(result.tokens()).containsExactly("gpt", "4", "fine", "tuning", "42", "007", "5");
+        assertThat(result.tokens()).containsExactly("gpt-4", "fine-tuning", "42", "007", "5");
+    }
+
+    @Test
+    void identityStemmerPreservesTheCompleteToken() {
+        assertThat(new IdentityStemmer().normalizeSuffixes("fine-tuning")).isEqualTo("fine-tuning");
+    }
+
+    @Test
+    void defaultConstructorLoadsClasspathStopwords() {
+        assertThat(
+                        new TextPreprocessor()
+                                .process(new Article("A09", "", "", "The model and data", false))
+                                .tokens())
+                .containsExactly("model", "data");
     }
 
     @Test
@@ -158,9 +170,8 @@ class TextPreprocessorTest {
     }
 
     private TextPreprocessor newPreprocessor(String stopwords) throws IOException {
-        Path stopwordsPath = temporaryDirectory.resolve("stopwords.txt");
-        Files.writeString(stopwordsPath, stopwords, StandardCharsets.UTF_8);
-        return new TextPreprocessor(stopwordsPath);
+        return new TextPreprocessor(
+                new ByteArrayInputStream(stopwords.getBytes(StandardCharsets.UTF_8)));
     }
 
     private Path findGeneratedCorpus() {

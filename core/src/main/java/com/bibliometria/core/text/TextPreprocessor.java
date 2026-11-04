@@ -1,12 +1,9 @@
 package com.bibliometria.core.text;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,31 +24,36 @@ import java.util.Set;
 public final class TextPreprocessor {
 
     private final Set<String> stopwords;
+    private final Stemmer stemmer;
 
-    /**
-     * Crea un preprocesador sin stopwords para transformaciones que requieren el vocabulario
-     * completo.
-     */
+    /** Crea un preprocesador usando las stopwords versionadas en el classpath. */
     public TextPreprocessor() {
-        this.stopwords = Set.of();
+        try {
+            this.stopwords = StopwordLoader.loadDefault();
+        } catch (IOException exception) {
+            throw new IllegalStateException(
+                    "No se pudieron cargar las stopwords del classpath", exception);
+        }
+        this.stemmer = new IdentityStemmer();
+    }
+
+    static TextPreprocessor withoutStopwords() {
+        return new TextPreprocessor(Set.of(), new IdentityStemmer());
     }
 
     /**
-     * Carga stopwords UTF-8, una entrada por línea.
+     * Carga stopwords UTF-8 desde un flujo de entrada. El llamador conserva la propiedad del flujo.
      *
-     * @param stopwordsFile ruta al archivo stopwords.txt
+     * @param stopwordsInput flujo con una palabra por línea
      * @throws IOException si no se puede leer o procesar el archivo
      */
-    public TextPreprocessor(Path stopwordsFile) throws IOException {
-        Objects.requireNonNull(stopwordsFile, "stopwordsFile");
-        Set<String> loaded = new LinkedHashSet<>();
-        for (String line : Files.readAllLines(stopwordsFile, StandardCharsets.UTF_8)) {
-            String normalized = normalizeText(line).toLowerCase(Locale.ROOT);
-            for (String token : tokenize(normalized)) {
-                loaded.add(token);
-            }
-        }
-        this.stopwords = Collections.unmodifiableSet(loaded);
+    public TextPreprocessor(InputStream stopwordsInput) throws IOException {
+        this(StopwordLoader.load(stopwordsInput), new IdentityStemmer());
+    }
+
+    TextPreprocessor(Set<String> stopwords, Stemmer stemmer) {
+        this.stopwords = Set.copyOf(Objects.requireNonNull(stopwords, "stopwords"));
+        this.stemmer = Objects.requireNonNull(stemmer, "stemmer");
     }
 
     /**
@@ -69,6 +71,7 @@ public final class TextPreprocessor {
         String textoNormalizado = normalizeText(article.title() + " " + article.abstractText());
         List<String> tokens =
                 tokenize(textoNormalizado.toLowerCase(Locale.ROOT)).stream()
+                        .map(stemmer::normalizeSuffixes)
                         .filter(token -> !stopwords.contains(token))
                         .toList();
 
@@ -106,7 +109,9 @@ public final class TextPreprocessor {
      */
     public List<String> tokenizeNormalizedText(String textoNormalizado) {
         Objects.requireNonNull(textoNormalizado, "textoNormalizado");
-        return tokenize(textoNormalizado.toLowerCase(Locale.ROOT));
+        return tokenize(textoNormalizado.toLowerCase(Locale.ROOT)).stream()
+                .map(stemmer::normalizeSuffixes)
+                .toList();
     }
 
     private String joinLineHyphenatedWords(String text) {
@@ -171,6 +176,12 @@ public final class TextPreprocessor {
                             || type == Character.ENCLOSING_MARK;
             if (Character.isLetterOrDigit(codePoint) || (mark && !token.isEmpty())) {
                 token.appendCodePoint(codePoint);
+            } else if (codePoint == '-'
+                    && !token.isEmpty()
+                    && hasTrailingLetterOrDigit(token)
+                    && offset < text.length()
+                    && Character.isLetterOrDigit(text.codePointAt(offset))) {
+                token.append('-');
             } else if (!token.isEmpty()) {
                 tokens.add(token.toString());
                 token.setLength(0);
@@ -180,5 +191,23 @@ public final class TextPreprocessor {
             tokens.add(token.toString());
         }
         return List.copyOf(tokens);
+    }
+
+    private boolean hasTrailingLetterOrDigit(StringBuilder token) {
+        int offset = token.length();
+        while (offset > 0) {
+            int codePoint = token.codePointBefore(offset);
+            if (Character.isLetterOrDigit(codePoint)) {
+                return true;
+            }
+            int type = Character.getType(codePoint);
+            if (type != Character.NON_SPACING_MARK
+                    && type != Character.COMBINING_SPACING_MARK
+                    && type != Character.ENCLOSING_MARK) {
+                return false;
+            }
+            offset -= Character.charCount(codePoint);
+        }
+        return false;
     }
 }
