@@ -54,6 +54,24 @@ class JsonEmbeddingProviderTest {
     }
 
     @Test
+    void rejectsMissingEmbeddingMetadata() {
+        assertThatThrownBy(() -> new JsonEmbeddingProvider().load(directory.resolve("missing")))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Required embeddings file does not exist");
+    }
+
+    @Test
+    void rejectsMalformedEmbeddingHashMetadata() throws IOException {
+        objectMapper.writeValue(
+                directory.resolve("embeddings.meta.json").toFile(),
+                Map.of("outputs", Map.of("vectors_ia1.json", "not-a-sha256")));
+
+        assertThatThrownBy(() -> new JsonEmbeddingProvider().load(directory))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Invalid SHA-256");
+    }
+
+    @Test
     void rejectsVectorsWithIncorrectDimensions() throws IOException {
         writeEmbeddings(ia1Path, vector(299, 0.0));
         writeMetadata();

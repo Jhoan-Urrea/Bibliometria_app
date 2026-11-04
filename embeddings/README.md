@@ -27,6 +27,9 @@ La similitud coseno entre vectores no nulos se define en `docs/DOCUMENTO_GENERAL
 `JsonEmbeddingProvider` carga IA-1 desde `vectors_ia1.json` e IA-2 desde
 `embeddings_ia2.json`. Ambos se validan contra los hashes registrados en `embeddings.meta.json`;
 IA-1 requiere vectores de 300 dimensiones e IA-2 vectores de 384 dimensiones con norma L2 unitaria.
+`SentenceBertSimilarity` calcula coseno real para vectores IA-2 normalizados. La capa de
+aplicación carga los embeddings de documentos con `JsonEmbeddingProvider` y proporciona el
+embedding de consulta generado por el mismo modelo a `HybridSearchService.searchHybrid`.
 La identidad, idioma, versión, procedencia y licencia del modelo deben quedar en sus metadatos y
 en los ADR correspondientes. La política de IA-1 está en
 [`ADR-004`](../docs/adr/ADR-004-modelo-ia1.md).

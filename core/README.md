@@ -60,3 +60,18 @@ con la tabla LPS de KMP, las tablas de carácter malo y sufijo bueno de Boyer-Mo
 de patrón y ventanas de Rabin-Karp. El escáner de APIs prohibidas y la prueba de estrés con 10.000
 casos de semilla fija están en `src/test`. JaCoCo exige al menos 85 % de cobertura de líneas en
 `com.bibliometria.core.matching`, además del umbral global de `core`.
+
+## Recuperación léxica y semántica
+
+`com.bibliometria.core.retrieval` define los contratos inmutables `SearchQuery`,
+`ScoredDocument` y `SearchResult`. `HybridSearchService.search` recupera con BM25 (`k1=1.2`,
+`b=0.75` por defecto), normaliza el máximo por consulta y pagina después del ranking.
+`searchHybrid` combina BM25 con ranking por coseno IA-2 mediante RRF (`k=60` por defecto).
+Los empates en cualquier ranking se resuelven por ID ascendente. Los vectores IA-2 y el vector
+de consulta se reciben como datos: la codificación de consultas y la carga JSON pertenecen al
+límite de infraestructura, no a `core`.
+
+`SearchCorpusIntegrationTest` comprueba BM25 sobre los 20 documentos congelados y mide 500
+consultas tras 100 iteraciones de calentamiento. Ejecutar con
+`mvn -pl core -Dtest=SearchCorpusIntegrationTest test`; la salida muestra promedio y p95 en
+microsegundos y es una medición local, no un límite de SLA.

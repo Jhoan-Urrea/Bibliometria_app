@@ -31,7 +31,7 @@ class AiSimilarityAndMatrixTest {
     }
 
     @Test
-    void calculatesSentenceBertSimilarityFromEuclideanDistance() {
+    void calculatesSentenceBertCosineSimilarity() {
         ProcessedDocument documentA = document("A");
         ProcessedDocument documentB = document("B");
         Map<String, double[]> embeddings = new LinkedHashMap<>();
@@ -41,8 +41,8 @@ class AiSimilarityAndMatrixTest {
         SimilarityResult result =
                 new SentenceBertSimilarity(embeddings).calcular(documentA, documentB);
 
-        assertThat(result.crudo()).isCloseTo(Math.sqrt(2.0), within(1e-12));
-        assertThat(result.normalizado()).isCloseTo(1.0 / (1.0 + Math.sqrt(2.0)), within(1e-12));
+        assertThat(result.crudo()).isCloseTo(0.0, within(1e-12));
+        assertThat(result.normalizado()).isCloseTo(0.5, within(1e-12));
     }
 
     @Test
