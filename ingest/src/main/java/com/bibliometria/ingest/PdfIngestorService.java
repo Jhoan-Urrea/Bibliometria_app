@@ -12,15 +12,18 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 /**
@@ -33,6 +36,10 @@ import org.apache.pdfbox.text.PDFTextStripper;
 public class PdfIngestorService {
 
     private static final int EXPECTED_PDF_COUNT = 20;
+    private static final System.Logger LOGGER =
+            System.getLogger(PdfIngestorService.class.getName());
+    private static final String WORKING_LANGUAGE = "en";
+    private static final String PENDING_REVIEWER = "PENDIENTE_REVISION_HUMANA";
     private static final Pattern ABSTRACT_HEADING =
             Pattern.compile(
                     "(?im)(?:^|[\\s.])(?:\\d+(?:\\.\\d+)*\\s*)?a\\s*b\\s*s\\s*t\\s*r\\s*a\\s*c\\s*t\\b"
@@ -42,7 +49,8 @@ public class PdfIngestorService {
     private static final Pattern NON_TITLE_LINE =
             Pattern.compile(
                     "(?i)(\\bdoi\\b|\\bhttps?://|\\bwww\\.|@|copyright|all rights reserved|"
-                            + "\\bvol(?:ume)?\\.?\\s+\\d|\\bissn\\b|\\breceived\\b|\\baccepted\\b)");
+                            + "\\bvol(?:ume)?\\.?\\s+\\d|\\bissn\\b|\\breceived\\b|\\baccepted\\b|"
+                            + "contents lists|science direct|open access|research article|review article)");
     private static final Pattern AUTHOR_AFFILIATION =
             Pattern.compile(
                     "(?i)(@|\\b(university|universidad|department|faculty|school|institute|"
@@ -70,10 +78,52 @@ public class PdfIngestorService {
         Path outputPath = Path.of("data", "corpus.json");
         List<CorpusRecord> records =
                 new PdfIngestorService().ingest(rawDirectory, manifestPath, outputPath);
+        Path apiCorpusPath = Path.of("api", "src", "main", "resources", "data", "corpus.json");
+        syncFrozenCorpus(
+                outputPath, apiCorpusPath, Path.of("docs", "evidence", "f1", "corpus.sha256"));
 
         System.out.printf(
-                "Corpus generado: %d registros en %s%n",
-                records.size(), outputPath.toAbsolutePath().normalize());
+                "Corpus generado y sincronizado: %d registros en %s y %s%n",
+                records.size(),
+                outputPath.toAbsolutePath().normalize(),
+                apiCorpusPath.toAbsolutePath().normalize());
+    }
+
+    private static void syncFrozenCorpus(Path generated, Path apiCopy, Path hashFile)
+            throws IOException {
+        Path absoluteApiCopy = apiCopy.toAbsolutePath().normalize();
+        Path absoluteHashFile = hashFile.toAbsolutePath().normalize();
+        Files.createDirectories(absoluteApiCopy.getParent());
+        Files.createDirectories(absoluteHashFile.getParent());
+        Path apiTemporary = Files.createTempFile(absoluteApiCopy.getParent(), "corpus-", ".tmp");
+        try {
+            Files.copy(generated, apiTemporary, StandardCopyOption.REPLACE_EXISTING);
+            moveAtomically(apiTemporary, absoluteApiCopy);
+        } finally {
+            Files.deleteIfExists(apiTemporary);
+        }
+        String corpusHash = new PdfIngestorService().sha256(generated.toAbsolutePath().normalize());
+        Path hashTemporary =
+                Files.createTempFile(absoluteHashFile.getParent(), "corpus-hash-", ".tmp");
+        try {
+            Files.writeString(
+                    hashTemporary, corpusHash + System.lineSeparator(), StandardCharsets.UTF_8);
+            moveAtomically(hashTemporary, absoluteHashFile);
+        } finally {
+            Files.deleteIfExists(hashTemporary);
+        }
+    }
+
+    private static void moveAtomically(Path source, Path destination) throws IOException {
+        try {
+            Files.move(
+                    source,
+                    destination,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     /**
@@ -96,6 +146,7 @@ public class PdfIngestorService {
                             + entries.size());
         }
 
+        Map<String, CorpusRecord> verifiedRecords = readVerifiedRecords(outputPath);
         List<CorpusRecord> records = new ArrayList<>(EXPECTED_PDF_COUNT);
         Path normalizedRawDirectory = rawDirectory.toAbsolutePath().normalize();
         for (ManifestEntry entry : entries) {
@@ -117,11 +168,36 @@ public class PdfIngestorService {
                                 + actualHash);
             }
 
-            records.add(extract(entry.id(), pdfPath));
+            CorpusRecord verified = verifiedRecords.get(entry.id());
+            if (verified != null
+                    && verified.filename().equals(entry.fileName())
+                    && verified.sha256().equalsIgnoreCase(actualHash)) {
+                records.add(verified);
+            } else {
+                records.add(extract(entry, pdfPath));
+            }
         }
 
         writeAtomically(outputPath, records);
         return List.copyOf(records);
+    }
+
+    private Map<String, CorpusRecord> readVerifiedRecords(Path corpusPath) throws IOException {
+        if (!Files.isRegularFile(corpusPath)) {
+            return Map.of();
+        }
+
+        Map<String, CorpusRecord> verifiedRecords = new HashMap<>();
+        for (CorpusRecord record :
+                objectMapper.readValue(corpusPath.toFile(), CorpusRecord[].class)) {
+            if (record.verified()
+                    && !PENDING_REVIEWER.equals(record.verificadoPor())
+                    && record.notas() != null
+                    && !record.notas().contains("AWAITING_MANUAL_DOUBLE_REVIEW")) {
+                verifiedRecords.put(record.id(), record);
+            }
+        }
+        return verifiedRecords;
     }
 
     private List<ManifestEntry> readManifest(Path manifestPath) throws IOException {
@@ -214,18 +290,107 @@ public class PdfIngestorService {
         }
     }
 
-    private CorpusRecord extract(String id, Path pdfPath) throws IOException {
-        String text;
+    private CorpusRecord extract(ManifestEntry entry, Path pdfPath) throws IOException {
+        List<String> pageTexts = new ArrayList<>();
+        String metadataTitle;
+        String metadataAuthors;
         try (PDDocument document = Loader.loadPDF(pdfPath.toFile())) {
             PDFTextStripper stripper = new PDFTextStripper();
             stripper.setSortByPosition(true);
-            text = stripper.getText(document).replace("\r\n", "\n").replace('\r', '\n');
+            PDDocumentInformation information = document.getDocumentInformation();
+            metadataTitle = information.getTitle();
+            metadataAuthors = information.getAuthor();
+            for (int page = 1; page <= document.getNumberOfPages(); page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+                pageTexts.add(stripper.getText(document).replace("\r\n", "\n").replace('\r', '\n'));
+            }
         }
 
-        String abstractText = extractAbstract(text);
-        String title = extractTitle(text, pdfPath);
-        String authors = extractAuthors(text, title);
-        return new CorpusRecord(id, title, authors, abstractText, false);
+        String text = String.join("\n", pageTexts);
+        int abstractPage = findAbstractPage(pageTexts);
+        List<String> warnings = new ArrayList<>();
+        String abstractSource = abstractPage == 0 ? text : pageTexts.get(abstractPage - 1);
+        String abstractText = extractAbstract(abstractSource);
+        if (abstractText.isBlank()) {
+            warnings.add("ABSTRACT_NOT_FOUND");
+        } else if (abstractText.length() < 100) {
+            warnings.add("ABSTRACT_UNDER_100_CHARACTERS");
+        } else if (abstractText.length() > 3_000) {
+            warnings.add("ABSTRACT_IMPLAUSIBLY_LONG_REQUIRES_MANUAL_REVIEW");
+        }
+        if (abstractText.matches(
+                "(?is)^\\s*(?:\\d+\\s*)?(?:faculty|department|university|univeristy)\\b.*")) {
+            warnings.add("ABSTRACT_START_REQUIRES_MANUAL_REVIEW");
+        }
+
+        String title =
+                isPlausibleTitle(metadataTitle)
+                        ? normalizeWhitespace(metadataTitle)
+                        : titleFromFileName(pdfPath);
+        if (title.isBlank() || NON_TITLE_LINE.matcher(title).find()) {
+            warnings.add("TITLE_REQUIRES_MANUAL_REVIEW");
+        }
+
+        String authors =
+                isPlausibleAuthor(metadataAuthors)
+                        ? normalizeWhitespace(metadataAuthors)
+                        : normalizeWhitespace(extractAuthors(text, title))
+                                .replaceAll("\\s+\\d+$", "");
+        if (authors.isBlank()) {
+            warnings.add("AUTHORS_NOT_FOUND");
+            authors = "PENDIENTE_REVISION_MANUAL";
+        }
+        if (abstractPage == 0) {
+            warnings.add("ABSTRACT_PAGE_NOT_FOUND");
+        }
+        warnings.add("AWAITING_MANUAL_DOUBLE_REVIEW");
+        for (String warning : warnings) {
+            LOGGER.log(
+                    System.Logger.Level.WARNING,
+                    "Corpus record {0} ({1}): {2}",
+                    entry.id(),
+                    entry.fileName(),
+                    warning);
+        }
+
+        return new CorpusRecord(
+                entry.id(),
+                entry.fileName(),
+                entry.sha256().toLowerCase(Locale.ROOT),
+                title,
+                authors,
+                abstractText,
+                WORKING_LANGUAGE,
+                abstractPage == 0 ? null : abstractPage,
+                false,
+                PENDING_REVIEWER,
+                List.copyOf(warnings));
+    }
+
+    private int findAbstractPage(List<String> pageTexts) {
+        for (int index = 0; index < pageTexts.size(); index++) {
+            if (ABSTRACT_HEADING.matcher(pageTexts.get(index)).find()) {
+                return index + 1;
+            }
+        }
+        return 0;
+    }
+
+    private boolean isPlausibleTitle(String value) {
+        return value != null
+                && value.strip().length() >= 10
+                && !value.matches(
+                        "(?i).*(^|[^a-z])(proof|contents lists|science direct)([^a-z]|$).*")
+                && !NON_TITLE_LINE.matcher(value).find();
+    }
+
+    private boolean isPlausibleAuthor(String value) {
+        return value != null
+                && !value.isBlank()
+                && !value.contains("@")
+                && !AUTHOR_AFFILIATION.matcher(value).find()
+                && value.length() <= 300;
     }
 
     private String extractAbstract(String text) {
@@ -238,7 +403,12 @@ public class PdfIngestorService {
         Matcher ending = ABSTRACT_END.matcher(text);
         ending.region(start, text.length());
         int end = ending.find() ? ending.start() : text.length();
-        return normalizeWhitespace(text.substring(start, end));
+        String abstractText = normalizeWhitespace(text.substring(start, end));
+        abstractText =
+                abstractText.replaceFirst(
+                        "(?i)^(?:keywords?\\s*[:.]?\\s*)?(?:\\d{1,2}\\s+[a-z]+\\s+\\d{4}\\s+)+",
+                        "");
+        return abstractText.replaceFirst("(?i)^keywords?\\s*[:.]?\\s*", "").strip();
     }
 
     private String extractTitle(String text, Path pdfPath) {
@@ -254,10 +424,7 @@ public class PdfIngestorService {
                         .map(String::strip)
                         .filter(line -> !line.isBlank() && line.length() >= 5)
                         .filter(line -> !NON_TITLE_LINE.matcher(line).find())
-                        .filter(
-                                line ->
-                                        !line.matches(
-                                                "(?i)^\\s*(open access|research article|review article)\\s*$"))
+                        .filter(line -> !NON_TITLE_LINE.matcher(line).find())
                         .toList();
 
         if (candidates.isEmpty()) {
@@ -297,7 +464,7 @@ public class PdfIngestorService {
                         .lines()
                         .map(String::strip)
                         .filter(s -> !s.isBlank())
-                        .limit(12)
+                        .limit(30)
                         .toList()) {
             if (AUTHOR_AFFILIATION.matcher(line).find()) {
                 continue;
@@ -310,9 +477,27 @@ public class PdfIngestorService {
     }
 
     private boolean looksLikeAuthors(String line) {
-        return line.contains(",")
-                || line.matches(".*\\b(and|&|et al\\.)\\b.*")
-                || line.matches(".*[¹²³⁴⁵⁶⁷⁸⁹*].*");
+        String normalized = line.strip();
+        if (normalized.isEmpty()
+                || normalized.matches("(?i)^(and|or|the|of|for|in)\\b.*")
+                || NON_TITLE_LINE.matcher(normalized).find()) {
+            return false;
+        }
+        normalized = normalized.replaceAll("(?<=\\p{L})\\d+(?:,\\d+)*", "");
+        String[] people = normalized.split("(?i)\\s+(?:and|&)\\s+|\\s*\\|\\s*|,\\s*(?=[A-Z])");
+        if (people.length < 2) {
+            return false;
+        }
+        for (String person : people) {
+            String name = person.replaceAll("[¹²³⁴⁵⁶⁷⁸⁹*\\d]", "").strip();
+            if (name.split("\\s+").length < 2
+                    || !Character.isUpperCase(name.codePointAt(0))
+                    || name.toLowerCase(Locale.ROOT)
+                            .matches(".*\\b(the|current|issue|journal)\\b.*")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String titleFromFileName(Path pdfPath) {
@@ -353,5 +538,15 @@ public class PdfIngestorService {
 
     /** Registro serializado del corpus. */
     public record CorpusRecord(
-            String id, String title, String authors, String abstractText, boolean verified) {}
+            String id,
+            String filename,
+            String sha256,
+            String title,
+            String authors,
+            String abstractText,
+            String language,
+            Integer paginaAbstract,
+            boolean verified,
+            String verificadoPor,
+            List<String> notas) {}
 }

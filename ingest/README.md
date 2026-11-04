@@ -26,9 +26,17 @@ La extracción y normalización se separan de los indicadores para que las métr
 
 `PdfIngestorService` valida los 20 archivos de `data/raw/` contra los SHA-256 de
 `data/manifest.csv` y escribe los registros en JSON mediante una sustitución atómica del archivo.
-La salida contiene `id`, `title`, `authors`, `abstractText` y `verified` (inicializado en `false`).
-La extracción de texto ordena las posiciones del PDF antes de aplicar heurísticas de encabezados
-y metadatos, incluyendo artículos con texto dispuesto en columnas.
+La salida contiene los campos definidos en `docs/corpus.schema.json`, incluyendo nombre y hash de
+origen, idioma, página inicial del abstract, notas de extracción y estado de revisión. La
+extracción ordena las posiciones del PDF (`setSortByPosition(true)`) antes de aplicar heurísticas
+de encabezados y metadatos, incluyendo artículos con texto dispuesto en columnas. Los problemas
+de heurística se registran como advertencias y quedan en `notas`; los errores de lectura PDF,
+manifiesto o checksum siguen fallando explícitamente.
+
+La generación sincroniza `data/corpus.json`, `api/src/main/resources/data/corpus.json` y
+`docs/evidence/f1/corpus.sha256`. Los registros comienzan con `verified: false` y
+`verificadoPor: "PENDIENTE_REVISION_HUMANA"`. No deben marcarse como verificados hasta completar la
+revisión doble registrada en `docs/evidence/f1/checklists.csv`.
 
 Ejecuta el proceso local y valida la forma del JSON con:
 
@@ -38,5 +46,5 @@ mvn -pl ingest -am -Dtest=PdfIngestorServiceTest -Dsurefire.failIfNoSpecifiedTes
 
 Para producir el corpus desde el IDE, ejecuta `PdfIngestorService.main` con el directorio de
 trabajo configurado en la raíz del proyecto (`~/Documentos/Bibliometria_app`). El método escribe
-`data/corpus.json` allí y falla explícitamente si falta un PDF o no coincide su SHA-256 con el
-manifiesto.
+los artefactos sincronizados y falla explícitamente si falta un PDF o no coincide su SHA-256 con
+el manifiesto.

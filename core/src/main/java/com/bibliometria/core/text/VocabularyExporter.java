@@ -23,7 +23,7 @@ public final class VocabularyExporter {
     private final TextPreprocessor preprocessor;
 
     public VocabularyExporter() {
-        this(new TextPreprocessor());
+        this(TextPreprocessor.withoutStopwords());
     }
 
     public VocabularyExporter(TextPreprocessor preprocessor) {
