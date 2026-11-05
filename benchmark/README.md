@@ -29,3 +29,29 @@ DF v2.1 requiere que `tools` pueda leer resultados de benchmark guardados. Antes
 consumir esos resultados debe definirse y versionarse su esquema, incluyendo operación, parámetros,
 unidad, configuración, versión del código y entorno. El lector no debe requerir una dependencia de
 este módulo.
+
+## Búsqueda exacta: E1, E2 y E3
+
+Ejecutar desde la raíz:
+
+```sh
+mvn --batch-mode --no-transfer-progress -pl benchmark exec:java \
+  -Dbenchmark.config=benchmark/benchmark-config.example.json
+```
+
+La configuración JSON permite seleccionar escenarios, semilla, número de muestras y rutas de los
+CSV. `BenchmarkRunner` descarta exactamente 2.000 ejecuciones de calentamiento por caso y
+algoritmo, aleatoriza el orden en cada ronda y exige al menos 30 muestras. El CSV de muestras
+contiene los valores individuales; el segundo CSV resume mediana, Q1, Q3 e IQR por métrica usando
+cuantiles interpolados linealmente.
+
+- **E1:** concatena los `abstractText` de un corpus JSON en orden y ejecuta un patrón presente y
+  otro ausente, ambos declarados en la configuración.
+- **E2:** genera texto y patrón deterministas con semilla fija para cada combinación de longitud
+  `n`, longitud `m` y alfabeto `sigma` (1–94 caracteres ASCII imprimibles).
+- **E3:** usa texto y patrón de caracteres repetidos para forzar comparaciones por ventana en
+  Boyer-Moore y verificación carácter a carácter en Rabin-Karp.
+
+`n`, `m` y `sigma` se miden en unidades UTF-16, igual que los algoritmos de `core`. La columna
+`extras` conserva como JSON las métricas específicas del algoritmo. El harness comprueba la paridad
+de posiciones entre los tres algoritmos antes de aceptar cada muestra.

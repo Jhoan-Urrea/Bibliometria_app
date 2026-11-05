@@ -15,11 +15,46 @@
     <name>Bibliometria Benchmark</name>
     <description>Medición reproducible de operaciones bibliométricas</description>
 
+    <properties>
+        <benchmark.config>${project.basedir}/benchmark-config.example.json</benchmark.config>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.bibliometria</groupId>
             <artifactId>core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <mainClass>com.bibliometria.benchmark.BenchmarkRunner</mainClass>
+                    <arguments>
+                        <argument>--config</argument>
+                        <argument>${benchmark.config}</argument>
+                    </arguments>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
