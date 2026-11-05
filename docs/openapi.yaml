@@ -1,0 +1,488 @@
+openapi: 3.1.0
+info:
+  title: Bibliometria API
+  version: 1.0.0
+  description: >
+    Contrato inicial para consulta de artículos, búsqueda, similitud y
+    agrupamiento del corpus bibliométrico.
+servers:
+  - url: /
+tags:
+  - name: Runtime
+  - name: Articles
+  - name: Analysis
+paths:
+  /api/health:
+    get:
+      tags: [Runtime]
+      operationId: getHealth
+      summary: Consultar disponibilidad del servicio
+      responses:
+        "200":
+          description: El núcleo terminó de cargar y está disponible.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: UP
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+  /api/articles:
+    get:
+      tags: [Articles]
+      operationId: listArticles
+      summary: Listar los artículos del corpus cargado
+      responses:
+        "200":
+          description: Artículos en orden estable por identificador.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+  /api/similarity:
+    post:
+      tags: [Analysis]
+      operationId: calculateSimilarity
+      summary: Calcular la similitud entre dos artículos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimilarityRequest"
+      responses:
+        "200":
+          description: Similitud calculada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimilarityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+  /api/clustering:
+    post:
+      tags: [Analysis]
+      operationId: clusterCorpus
+      summary: Agrupar el corpus mediante clustering jerárquico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClusteringRequest"
+      responses:
+        "200":
+          description: Agrupamiento y dendrograma calculados.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusteringResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+  /api/search:
+    post:
+      tags: [Analysis]
+      operationId: searchArticles
+      summary: Buscar artículos por relevancia
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+      responses:
+        "200":
+          description: Página de resultados ordenada de forma determinista.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+  /api/search/trace:
+    get:
+      tags: [Analysis]
+      operationId: traceExactSearch
+      summary: Buscar un patrón exacto y obtener las trazas de los algoritmos
+      description: >
+        Busca de forma sensible a mayúsculas en el P-TEXTO normalizado (título y resumen)
+        de cada artículo. Devuelve posiciones y fragmentos resaltables para el corpus. Si se
+        proporciona articleId, también devuelve los eventos de traza de ese artículo para evitar
+        respuestas innecesariamente voluminosas.
+      parameters:
+        - in: query
+          name: pattern
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 200
+            pattern: ".*\\S.*"
+        - in: query
+          name: articleId
+          required: false
+          description: Limita la respuesta a un artículo y activa la traza detallada de algoritmos.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 32
+      responses:
+        "200":
+          description: Coincidencias exactas y trazas de los tres algoritmos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchTraceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        default:
+          $ref: "#/components/responses/InternalError"
+components:
+  schemas:
+    Article:
+      type: object
+      additionalProperties: false
+      required: [id, title, authors, abstractText, verified]
+      properties:
+        id:
+          type: string
+          minLength: 1
+          examples: [A01]
+        title:
+          type: string
+          minLength: 1
+        authors:
+          type: string
+          minLength: 1
+        abstractText:
+          type: string
+          minLength: 1
+        verified:
+          type: boolean
+    SimilarityRequest:
+      type: object
+      additionalProperties: false
+      required: [articleAId, articleBId, algorithm]
+      properties:
+        articleAId:
+          type: string
+          minLength: 1
+          maxLength: 32
+        articleBId:
+          type: string
+          minLength: 1
+          maxLength: 32
+        algorithm:
+          $ref: "#/components/schemas/SimilarityAlgorithm"
+    SimilarityResponse:
+      type: object
+      additionalProperties: false
+      required: [articleAId, articleBId, algorithm, rawScore, normalizedScore]
+      properties:
+        articleAId:
+          type: string
+        articleBId:
+          type: string
+        algorithm:
+          $ref: "#/components/schemas/SimilarityAlgorithm"
+        rawScore:
+          type: number
+          description: Puntuación propia del algoritmo, finita y sin normalización común.
+        normalizedScore:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Puntuación normalizada para comparación y visualización.
+    SimilarityAlgorithm:
+      type: string
+      enum: [levenshtein, lcs, tfidf, jaccard, fasttext, sentence-bert]
+    ClusteringRequest:
+      type: object
+      additionalProperties: false
+      required: [clusterCount, linkage]
+      properties:
+        clusterCount:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Número de grupos solicitado para el corpus de referencia de 20 artículos.
+        linkage:
+          $ref: "#/components/schemas/Linkage"
+    ClusteringResponse:
+      type: object
+      additionalProperties: false
+      required: [articleIds, linkage, clusters, merges]
+      properties:
+        articleIds:
+          type: array
+          description: Orden canónico por identificador al que corresponden los índices de merge.
+          items:
+            type: string
+        linkage:
+          $ref: "#/components/schemas/Linkage"
+        clusters:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [label, articleIds]
+            properties:
+              label:
+                type: integer
+                minimum: 0
+              articleIds:
+                type: array
+                items:
+                  type: string
+        merges:
+          type: array
+          description: >
+            Pasos del dendrograma; los nodos hoja usan índices de articleIds y los nodos
+            fusionados continúan desde el tamaño del corpus.
+          items:
+            type: object
+            additionalProperties: false
+            required: [leftChild, rightChild, height, size]
+            properties:
+              leftChild:
+                type: integer
+                minimum: 0
+              rightChild:
+                type: integer
+                minimum: 1
+              height:
+                type: number
+                minimum: 0
+                maximum: 1
+              size:
+                type: integer
+                minimum: 2
+    Linkage:
+      type: string
+      enum: [single, complete, average]
+    SearchRequest:
+      type: object
+      additionalProperties: false
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 200
+          pattern: ".*\\S.*"
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+    SearchResponse:
+      type: object
+      additionalProperties: false
+      required: [query, results, totalHits, page, pageSize, totalPages]
+      properties:
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [article, score, lexicalScore, semanticScore]
+            properties:
+              article:
+                $ref: "#/components/schemas/Article"
+              score:
+                type: number
+                minimum: 0
+                maximum: 1
+              lexicalScore:
+                type: number
+                minimum: 0
+                maximum: 1
+              semanticScore:
+                type: number
+                minimum: 0
+                maximum: 1
+        totalHits:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalPages:
+          type: integer
+          minimum: 0
+    SearchTraceResponse:
+      type: object
+      additionalProperties: false
+      required: [pattern, algorithmsAgree, articles]
+      properties:
+        pattern:
+          type: string
+        algorithmsAgree:
+          type: boolean
+        articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleTrace"
+    ArticleTrace:
+      type: object
+      additionalProperties: false
+      required: [articleId, positionsByAlgorithm, fragments, events]
+      properties:
+        articleId:
+          type: string
+        positionsByAlgorithm:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: integer
+              minimum: 0
+        fragments:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchFragment"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchTraceEvent"
+    MatchFragment:
+      type: object
+      additionalProperties: false
+      required: [start, text, highlightStart, highlightEnd]
+      properties:
+        start:
+          type: integer
+          minimum: 0
+        text:
+          type: string
+        highlightStart:
+          type: integer
+          minimum: 0
+        highlightEnd:
+          type: integer
+          minimum: 0
+    SearchTraceEvent:
+      type: object
+      additionalProperties: false
+      required: [articleId, algorithm, step, data]
+      properties:
+        articleId:
+          type: string
+        algorithm:
+          type: string
+          enum: [KMP, Boyer-Moore, Rabin-Karp]
+        step:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+    Problem:
+      type: object
+      description: Error object following RFC 7807; extension members may be added by the server.
+      properties:
+        type:
+          type: string
+          format: uri
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 100
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        correlationId:
+          type: string
+          format: uuid
+          description: Identificador único de esta petición, también enviado en X-Correlation-ID.
+        invalidParams:
+          type: array
+          description: Extensión opcional para errores de validación.
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, reason]
+            properties:
+              name:
+                type: string
+              reason:
+                type: string
+      required: [type, title, status, correlationId]
+  responses:
+    BadRequest:
+      description: Solicitud malformada o parámetros que no superan la validación.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: No existe uno o más artículos indicados.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnprocessableEntity:
+      description: El algoritmo solicitado no puede calcular el resultado con los datos disponibles.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailable:
+      description: El servicio aún no está listo o el núcleo no está disponible.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Error inesperado; la respuesta no expone detalles internos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"

@@ -66,7 +66,8 @@ tools también lee artefactos guardados de benchmark mediante archivos, sin depe
 - Dependencias orientadas hacia el dominio; los adaptadores dependen de los contratos del dominio, no al contrario.
 - UTF-8 y Java 21 en todos los módulos Maven.
 - Versiones de dependencias gestionadas desde el POM raíz.
-- Contratos públicos explícitos, validables y documentados en el README del módulo correspondiente.
+- Contratos HTTP públicos explícitos y validables en `docs/openapi.yaml`; los README de módulo
+  documentan su integración técnica sin duplicar el contrato.
 - Las operaciones deterministas deben producir resultados reproducibles con los mismos datos, parámetros y versión de algoritmo.
 - Las responsabilidades y contratos se resumen aquí y en el README de cada módulo. Las decisiones
   formales se registran en `docs/adr/`; el historial de cambios de formulación se mantiene en
