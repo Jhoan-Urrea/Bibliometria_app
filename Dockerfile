@@ -15,6 +15,6 @@ COPY --from=build --chown=10001:10001 /layers/snapshot-dependencies/ ./
 COPY --from=build --chown=10001:10001 /layers/application/ ./
 
 USER 10001:10001
-EXPOSE 8443
+EXPOSE 8080
 ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]
