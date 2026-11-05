@@ -6,6 +6,12 @@ Cada uso que afecte artefactos del repositorio debe documentarse y verificarse.
 | Fecha | Herramienta / Modelo | Propósito | Código / sección afectada | Método de verificación |
 |---|---|---|---|---|
 | 2026-11-01 | GitHub Copilot (modelo no expuesto en esta sesión) | Preparar automatización de manifiesto, servicio HTTP de humo, contenedores y artefactos de gobierno de Fase 0 | `scripts/generate_manifest.py`, `api`, `Dockerfile`, `docker-compose.yml`, `docs/DOCUMENTO_GENERAL.md`, `docs/evidence/f0/acta-gate-f0.md` | Build Maven, prueba HTTP de `/api/health`, prueba temporal del generador con 20 PDFs sintéticos, validación de configuración Compose y revisión de contenido; registrar resultados finales antes de aprobar el Gate F0 |
+| 2026-11-04 | GitHub Copilot SDK en VS Code (modelo no expuesto) | Asistencia a la consolidación técnica de Fase 6: análisis de benchmark, síntesis de arquitectura, matriz de cumplimiento, declaración de IA y preparación del release | `tools/.../benchmark/AnalisisBenchmark.java`, `benchmark`, `docs/evidence/f6/informe-benchmark.md`, `docs/DOCUMENTO_FINAL.md` | `mvn -pl tools -am verify`; ejecución E1/E2/E3 con 1.260 muestras; inspección del JAR API y del JAR benchmark; validación final de build/tag. La aprobación humana y cotejo con la rúbrica externa permanecen pendientes. |
+
+La asistencia generativa no sustituye revisión humana. El modelo exacto no se registra cuando la
+plataforma no lo expone; no se debe inferir ni completar ese dato mediante suposiciones. La
+persona responsable del proyecto conserva la responsabilidad de aprobar código, resultados,
+fuentes, licencias y documentación antes de la entrega académica.
 
 ## Declaración de modelos IA del aplicativo
 

@@ -1,0 +1,25 @@
+{
+  "seed": 42,
+  "samples": 30,
+  "corpus": "../data/corpus.json",
+  "outputCsv": "target/benchmark-samples.csv",
+  "summaryCsv": "target/benchmark-summary.csv",
+  "scenarios": [
+    {
+      "type": "E1",
+      "presentPattern": "artificial intelligence",
+      "absentPattern": "__BENCHMARK_PATTERN_ABSENT__"
+    },
+    {
+      "type": "E2",
+      "textSizes": [256, 1024],
+      "patternLengths": [8, 24],
+      "alphabetSizes": [2, 16]
+    },
+    {
+      "type": "E3",
+      "textSizes": [256, 512],
+      "patternLengths": [8, 16]
+    }
+  ]
+}
