@@ -10,43 +10,62 @@ import java.util.Objects;
 /**
  * Búsqueda Boyer-Moore con regla de carácter malo y sufijo bueno fuerte.
  *
- * <p>Correspondencia con DF §7:
+ * <p>Correspondencia fórmula-código (AR-F2-11):
  *
  * <table>
  *   <caption>Fórmulas Boyer-Moore y código</caption>
- *   <tr><th>Fórmula / variable</th><th>Implementación</th><th>Líneas Java</th></tr>
+ *   <tr><th>Fórmula / variable</th><th>Implementación Java</th></tr>
  *   <tr><td>{@code m = |P|}, {@code n = |T|}</td>
- *       <td>{@code patron.length()}, {@code texto.length()}</td><td>93</td></tr>
+ *       <td>{@code patron.length()}, {@code texto.length()} en {@link #buscarTodas}</td></tr>
  *   <tr><td>{@code last(c) = max{i : P[i] = c}, -1 si no existe}</td>
- *       <td>{@code ultimaAparicion[c]}</td><td>125-132</td></tr>
+ *       <td>{@code ultimaAparicion[c]} en {@link #ultimaAparicion(String)}</td></tr>
  *   <tr><td>{@code suf[i] = longitud de la subcadena que termina en i y coincide con un sufijo de P}</td>
- *       <td>{@code sufijos[i]} en {@code construirSufijos}</td><td>183-205</td></tr>
+ *       <td>{@code sufijos[i]} en {@code construirSufijos}</td></tr>
  *   <tr><td>{@code shift[j]}; desplazamiento fuerte de sufijo bueno</td>
- *       <td>{@code desplazamientosBuenSufijo[j]}</td><td>159-180</td></tr>
+ *       <td>{@code desplazamientosBuenSufijo[j]} en {@code calcularDesplazamientosBuenSufijo}</td></tr>
  *   <tr><td>{@code max(j - last(T[s+j]), shift[j])}</td>
- *       <td>{@code caracterMalo}, {@code sufijoBueno}, {@code Math.max}</td><td>107-110</td></tr>
- *   <tr><td>{@code shift[0]}</td><td>Desplazamiento tras coincidencia completa</td><td>103-105</td></tr>
- *   <tr><td>{@code P[j] == T[s+j]}</td><td>Comparación de derecha a izquierda</td><td>95-100</td></tr>
+ *       <td>{@code caracterMalo}, {@code sufijoBueno}, {@code Math.max} en {@link #buscarTodas}</td></tr>
+ *   <tr><td>{@code shift[0]}</td><td>Desplazamiento tras coincidencia completa en
+ *       {@link #desplazamientoTrasOcurrencia(String)}</td></tr>
+ *   <tr><td>{@code P[j] == T[s+j]}</td><td>Comparación de derecha a izquierda en
+ *       {@link #buscarTodas}</td></tr>
  * </table>
  *
- * <p>Complejidad teórica (DF §7.4): el preprocesamiento cuesta {@code O(m + |Sigma|)}, donde {@code
- * |Sigma| = 65,536} por la tabla densa de caracteres UTF-16. La búsqueda tiene mejor comportamiento
- * promedio sublineal, pero su peor caso sin la optimización Galil es {@code O(n*m)}. El espacio
- * auxiliar es {@code O(m + |Sigma|)}; no incluye las posiciones de salida. La traza se desactiva
- * por defecto.
+ * <p>Complejidad: el preprocesamiento cuesta {@code O(m + |Sigma|)}, donde {@code |Sigma| = 65,536}
+ * por la tabla densa de caracteres UTF-16. La búsqueda tiene mejor comportamiento promedio
+ * sublineal, pero su peor caso sin la optimización Galil es {@code O(n*m)}. El espacio auxiliar es
+ * {@code O(m + |Sigma|)}; no incluye las posiciones de salida. La traza se desactiva por defecto.
  */
 public final class BoyerMooreMatcher implements StringMatcher {
 
     private final TraceRecorder traceRecorder;
 
+    /** Creates a matcher with tracing disabled. */
     public BoyerMooreMatcher() {
         this(TraceRecorder.sinTraza());
     }
 
+    /**
+     * Creates a matcher with the supplied trace recorder.
+     *
+     * @param traceRecorder recorder used for algorithm events
+     */
     public BoyerMooreMatcher(TraceRecorder traceRecorder) {
         this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
     }
 
+    /**
+     * Busca todas las posiciones de {@code P} en {@code T} con las reglas de carácter malo y sufijo
+     * bueno fuerte.
+     *
+     * <p>Tras un desajuste en {@code j}, el desplazamiento es {@code max(1, j - last(T[s+j]),
+     * shift[j])}; tras una coincidencia completa usa {@code shift[0]}. Las posiciones son índices
+     * UTF-16.
+     *
+     * @param texto texto {@code T} en el que buscar
+     * @param patron patrón {@code P}
+     * @return posiciones, tiempos y número de comparaciones de caracteres
+     */
     @Override
     public MatchResult buscarTodas(String texto, String patron) {
         Objects.requireNonNull(texto, "texto");
@@ -122,10 +141,10 @@ public final class BoyerMooreMatcher implements StringMatcher {
     }
 
     /**
-     * Devuelve la última posición de cada carácter UTF-16, o -1 si no aparece en el patrón.
+     * Calcula {@code last(c) = max{i : P[i] = c}}, o {@code -1} si {@code c} no aparece.
      *
-     * @param patron patrón que se preprocesa
-     * @return tabla indexada por el valor de cada {@code char}
+     * @param patron patrón {@code P} que se preprocesa
+     * @return tabla {@code ultimaAparicion[c]} indexada por el valor UTF-16 de {@code c}
      */
     public static int[] ultimaAparicion(String patron) {
         Objects.requireNonNull(patron, "patron");
@@ -138,13 +157,13 @@ public final class BoyerMooreMatcher implements StringMatcher {
     }
 
     /**
-     * Devuelve los desplazamientos fuertes para desajustes en las posiciones 1..m-1.
+     * Devuelve {@code shift[j]} para desajustes en las posiciones {@code 1..m-1}.
      *
      * <p>La posición cero se omite para que el vector conserve la convención del artefacto F2; su
      * desplazamiento también es el que se usa tras una coincidencia completa.
      *
-     * @param patron patrón que se preprocesa
-     * @return vector de tamaño {@code max(0, m - 1)}
+     * @param patron patrón {@code P} que se preprocesa
+     * @return desplazamientos de sufijo bueno fuerte para {@code j=1..m-1}
      */
     public static int[] buenSufijo(String patron) {
         Objects.requireNonNull(patron, "patron");
@@ -154,7 +173,12 @@ public final class BoyerMooreMatcher implements StringMatcher {
                 : Arrays.copyOfRange(desplazamientos, 1, desplazamientos.length);
     }
 
-    /** Devuelve el desplazamiento seguro que sigue a una coincidencia completa. */
+    /**
+     * Devuelve {@code shift[0]}, el desplazamiento seguro tras una coincidencia completa.
+     *
+     * @param patron patrón {@code P}
+     * @return desplazamiento posterior a la ocurrencia
+     */
     public static int desplazamientoTrasOcurrencia(String patron) {
         Objects.requireNonNull(patron, "patron");
         int[] desplazamientos = calcularDesplazamientosBuenSufijo(patron);

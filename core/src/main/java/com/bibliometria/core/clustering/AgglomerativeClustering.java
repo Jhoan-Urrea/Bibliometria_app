@@ -4,7 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/** Deterministic bottom-up hierarchical clustering over an immutable distance matrix. */
+/**
+ * Deterministic bottom-up hierarchical clustering over an immutable distance matrix.
+ *
+ * <p>For each active pair, {@code run} selects the minimum {@code d(A,B)}, merges it, and updates
+ * every remaining distance with {@code
+ * d(A∪B,C)=alphaA*d(A,C)+alphaB*d(B,C)+beta*d(A,B)+gamma*abs(d(A,C)-d(B,C))}, using {@link
+ * Linkage#update(double, double, double, int, int)}. It emits {@code N-1} merges; leaves use IDs
+ * {@code 0..N-1}, and merge {@code k} receives ID {@code N+k}. Equal distances are resolved by the
+ * lexicographically smallest active pair. Current implementation complexity is {@code O(N^3)} time
+ * and {@code O(N^2)} space.
+ */
 public final class AgglomerativeClustering {
 
     private static final double TOLERANCE = 1e-12;
@@ -12,7 +22,8 @@ public final class AgglomerativeClustering {
     private AgglomerativeClustering() {}
 
     /**
-     * Builds a complete hierarchy using the supplied linkage criterion.
+     * Builds a complete hierarchy using the supplied linkage criterion and Lance-Williams
+     * recurrence documented on this class.
      *
      * <p>At each step the active pair with minimum distance is selected. Exact distance ties are
      * resolved lexicographically by cluster node indices, always selecting the pair with the

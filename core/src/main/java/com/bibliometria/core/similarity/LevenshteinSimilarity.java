@@ -11,6 +11,14 @@ import java.util.Objects;
  */
 public final class LevenshteinSimilarity implements SimilarityAlgorithm {
 
+    /**
+     * Calcula {@code 1 - E / max(|A|, |B|)}, donde {@code E} es la distancia de edición mínima
+     * sobre puntos de código Unicode.
+     *
+     * @param documentA primer documento normalizado
+     * @param documentB segundo documento normalizado
+     * @return distancia cruda {@code E} y similitud normalizada en {@code [0, 1]}
+     */
     @Override
     public SimilarityResult calcular(ProcessedDocument documentA, ProcessedDocument documentB) {
         Objects.requireNonNull(documentA, "documentA");

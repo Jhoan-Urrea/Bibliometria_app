@@ -1,7 +1,10 @@
-package com.bibliometria.core.retrieval;
+package com.bibliometria.tools.corpus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.bibliometria.core.retrieval.HybridSearchService;
+import com.bibliometria.core.retrieval.SearchQuery;
+import com.bibliometria.core.retrieval.SearchResult;
 import com.bibliometria.core.text.Article;
 import com.bibliometria.core.text.ProcessedDocument;
 import com.bibliometria.core.text.TextPreprocessor;

@@ -1,7 +1,10 @@
-package com.bibliometria.core.text;
+package com.bibliometria.tools.corpus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.bibliometria.core.text.Article;
+import com.bibliometria.core.text.ProcessedDocument;
+import com.bibliometria.core.text.TextPreprocessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;

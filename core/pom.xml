@@ -26,11 +26,6 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -57,9 +52,10 @@
                             <rules>
                                 <bannedDependencies>
                                     <searchTransitive>true</searchTransitive>
-                                    <message>The core module must not have compile-scope dependencies; JUnit and AssertJ are permitted only for tests.</message>
+                                    <message>The core module must not have compile- or runtime-scope dependencies; JUnit and AssertJ are permitted only for tests.</message>
                                     <excludes>
                                         <exclude>*:*:*:*:compile</exclude>
+                                        <exclude>*:*:*:*:runtime</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

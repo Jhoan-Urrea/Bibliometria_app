@@ -46,6 +46,13 @@ public final class TfIdfSimilarity implements SimilarityAlgorithm {
         documentFrequencies = Map.copyOf(frequencies);
     }
 
+    /**
+     * Construye {@code u_d[t] = tf(t,d) * ln(20 / df(t))} y devuelve el coseno entre los vectores.
+     *
+     * @param documentA primer documento
+     * @param documentB segundo documento
+     * @return coseno crudo y valor normalizado según el contrato de similitud
+     */
     @Override
     public SimilarityResult calcular(ProcessedDocument documentA, ProcessedDocument documentB) {
         Objects.requireNonNull(documentA, "documentA");

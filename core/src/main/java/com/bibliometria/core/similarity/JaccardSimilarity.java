@@ -12,6 +12,14 @@ import java.util.Set;
  */
 public final class JaccardSimilarity implements SimilarityAlgorithm {
 
+    /**
+     * Calcula {@code |A ∩ B| / |A ∪ B|} sobre los conjuntos de tokens; si ambos están vacíos,
+     * define la similitud como {@code 1}.
+     *
+     * @param documentA primer documento
+     * @param documentB segundo documento
+     * @return similitud cruda y normalizada, ambas en {@code [0, 1]}
+     */
     @Override
     public SimilarityResult calcular(ProcessedDocument documentA, ProcessedDocument documentB) {
         Objects.requireNonNull(documentA, "documentA");

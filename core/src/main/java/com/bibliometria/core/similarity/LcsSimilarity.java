@@ -15,6 +15,14 @@ import java.util.Objects;
  */
 public final class LcsSimilarity implements SimilarityAlgorithm {
 
+    /**
+     * Calcula {@code L / max(|A|, |B|)}, con {@code L} como longitud de la subsecuencia común más
+     * larga de las secuencias de tokens.
+     *
+     * @param documentA primer documento
+     * @param documentB segundo documento
+     * @return longitud cruda {@code L} y similitud normalizada en {@code [0, 1]}
+     */
     @Override
     public SimilarityResult calcular(ProcessedDocument documentA, ProcessedDocument documentB) {
         List<String> subsequence = longestCommonSubsequence(documentA, documentB);

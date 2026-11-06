@@ -14,6 +14,12 @@ Contener el modelo de dominio bibliométrico, sus invariantes y los cálculos de
 ## Justificación técnica / matemática
 
 El aislamiento del dominio evita que formatos, transporte HTTP o motores de embeddings condicionen las reglas bibliométricas. Los indicadores deben declarar universo, filtros, corte temporal y tratamiento de datos faltantes. Las fórmulas oficiales y su trazabilidad se mantienen en `docs/DOCUMENTO_GENERAL.md`, sección “Formulación matemática v2.0”.
+Las fórmulas de similitud se desarrollan en
+[`docs/final/documento-diseno.md`](../docs/final/documento-diseno.md); las de distancia y
+clustering, en [`docs/req/req2/implementacion-req2.md`](../docs/req/req2/implementacion-req2.md).
+Los Javadocs de cada algoritmo enlazan esas notaciones con los métodos y variables que las
+implementan. La búsqueda exacta y su evidencia se describen en
+[`docs/casos-de-estudio/ce3/README.md`](../docs/casos-de-estudio/ce3/README.md).
 
 ## Criterios de independencia
 
@@ -71,7 +77,8 @@ Los empates en cualquier ranking se resuelven por ID ascendente. Los vectores IA
 de consulta se reciben como datos: la codificación de consultas y la carga JSON pertenecen al
 límite de infraestructura, no a `core`.
 
+Las pruebas de corpus basadas en JSON viven en `tools`, fuera del classpath de pruebas del núcleo.
 `SearchCorpusIntegrationTest` comprueba BM25 sobre los 20 documentos congelados y mide 500
 consultas tras 100 iteraciones de calentamiento. Ejecutar con
-`mvn -pl core -Dtest=SearchCorpusIntegrationTest test`; la salida muestra promedio y p95 en
-microsegundos y es una medición local, no un límite de SLA.
+`mvn -pl tools -am -Dtest=SearchCorpusIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false test`;
+la salida muestra promedio y p95 en microsegundos y es una medición local, no un límite de SLA.

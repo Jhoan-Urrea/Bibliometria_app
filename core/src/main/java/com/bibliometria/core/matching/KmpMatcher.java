@@ -9,22 +9,24 @@ import java.util.Objects;
 /**
  * Búsqueda Knuth-Morris-Pratt con soporte para coincidencias solapadas.
  *
- * <p>Correspondencia con DF §7:
+ * <p>Correspondencia fórmula-código (AR-F2-11):
  *
  * <table>
  *   <caption>Fórmulas KMP y código</caption>
- *   <tr><th>Fórmula / variable</th><th>Implementación</th><th>Líneas Java</th></tr>
- *   <tr><td>{@code m = patron.length()}</td><td>Longitud del patrón</td><td>47, 69, 88</td></tr>
- *   <tr><td>{@code n = texto.length()}</td><td>Longitud del texto</td><td>64</td></tr>
+ *   <tr><th>Fórmula / variable</th><th>Implementación Java</th></tr>
+ *   <tr><td>{@code m = |P|}</td><td>{@code patron.length()} en {@link #buscarTodas}</td></tr>
+ *   <tr><td>{@code n = |T|}</td><td>{@code texto.length()} en {@link #buscarTodas}</td></tr>
  *   <tr><td>{@code LPS[i] = max{k : 0 <= k <= i, P[0..k) = P[i-k+1..i]}}</td>
- *       <td>{@code lps[i]}; prefijo propio más largo que es sufijo</td><td>86-102</td></tr>
- *   <tr><td>{@code T[i] == P[j]}</td><td>Comparación carácter a carácter</td><td>65-66</td></tr>
- *   <tr><td>{@code j = LPS[j-1]}</td><td>Retorno tras desajuste o coincidencia</td><td>71, 74</td></tr>
+ *       <td>{@code lps[i]} en {@link #construirLps(String)}; prefijo propio más largo que es
+ *       sufijo</td></tr>
+ *   <tr><td>{@code T[i] == P[j]}</td><td>Comparación en {@link #buscarTodas}</td></tr>
+ *   <tr><td>{@code j = LPS[j-1]}</td><td>Retorno tras desajuste o coincidencia en
+ *       {@link #buscarTodas}</td></tr>
  * </table>
  *
- * <p>Complejidad teórica (DF §7.4): construir LPS cuesta {@code O(m)}; buscar cuesta {@code O(n)};
- * el total es {@code O(n + m)}. El espacio auxiliar es {@code O(m)} para LPS; el almacenamiento de
- * posiciones de salida no se cuenta. La traza está desactivada por defecto.
+ * <p>Complejidad: construir LPS cuesta {@code O(m)}; buscar cuesta {@code O(n)}; el total es {@code
+ * O(n + m)}. El espacio auxiliar es {@code O(m)} para LPS; el almacenamiento de posiciones de
+ * salida no se cuenta. La traza está desactivada por defecto.
  */
 public final class KmpMatcher implements StringMatcher {
 
@@ -38,6 +40,16 @@ public final class KmpMatcher implements StringMatcher {
         this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
     }
 
+    /**
+     * Busca todas las posiciones de {@code P} en {@code T}, permitiendo coincidencias solapadas.
+     *
+     * <p>Usa {@code lps[j - 1]} para continuar tras coincidencias y desajustes sin retroceder en
+     * {@code T}; las posiciones son índices UTF-16 de {@link String#charAt(int)}.
+     *
+     * @param texto texto {@code T} en el que buscar
+     * @param patron patrón {@code P}
+     * @return posiciones, tiempos y número de comparaciones de caracteres
+     */
     @Override
     public MatchResult buscarTodas(String texto, String patron) {
         Objects.requireNonNull(texto, "texto");
@@ -84,7 +96,13 @@ public final class KmpMatcher implements StringMatcher {
         return new MatchResult(posiciones, nanosPreproceso, nanosBusqueda, comparaciones, Map.of());
     }
 
-    /** Construye en O(m) la tabla de prefijos propios que también son sufijos. */
+    /**
+     * Construye en {@code O(m)} la tabla {@code lps[i]}, longitud del prefijo propio más largo de
+     * {@code patron[0..i]} que también es sufijo.
+     *
+     * @param patron patrón {@code P}
+     * @return tabla LPS de longitud {@code m}
+     */
     public static int[] construirLps(String patron) {
         Objects.requireNonNull(patron, "patron");
         int[] lps = new int[patron.length()];

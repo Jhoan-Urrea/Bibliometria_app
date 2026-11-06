@@ -8,28 +8,31 @@ import java.util.Objects;
 /**
  * Búsqueda Rabin-Karp con hash rodante y verificación exacta de cada hash coincidente.
  *
- * <p>Correspondencia con DF §7:
+ * <p>Correspondencia fórmula-código (AR-F2-11):
  *
  * <table>
  *   <caption>Fórmulas Rabin-Karp y código</caption>
- *   <tr><th>Fórmula / variable</th><th>Implementación</th><th>Líneas Java</th></tr>
+ *   <tr><th>Fórmula / variable</th><th>Implementación Java</th></tr>
  *   <tr><td>{@code m = |P|}, {@code n = |T|}</td>
- *       <td>{@code patron.length()}, {@code texto.length()}</td><td>58, 93</td></tr>
+ *       <td>{@code patron.length()}, {@code texto.length()} en {@link #buscarTodas}</td></tr>
  *   <tr><td>{@code B = 257}, {@code q = 1,000,000,007}</td>
- *       <td>{@code BASE}, {@code MODULO}</td><td>36-37</td></tr>
+ *       <td>{@code BASE}, {@code MODULO}</td></tr>
+ *   <tr><td>{@code P[i]} as a UTF-16 code unit</td>
+ *       <td>{@code patron.charAt(i)} in {@link #buscarTodas}</td></tr>
  *   <tr><td>{@code H(P) = sum(P[i] * B^(m-1-i)) mod q}</td>
- *       <td>{@code hashPatron}; potencia de salida {@code potenciaMayor}</td><td>55-63</td></tr>
+ *       <td>{@code hashPatron}; {@code potenciaMayor = B^(m-1) mod q}</td></tr>
  *   <tr><td>{@code H(T[s+1..s+m]) = ((H(T[s..s+m-1]) - T[s]*B^(m-1))*B + T[s+m]) mod q}</td>
- *       <td>{@code hashSinInicial} y actualización de {@code hashVentana}</td><td>123-125</td></tr>
- *   <tr><td>{@code H(ventana) == H(P)}</td><td>{@code hashCoincide}</td><td>94</td></tr>
- *   <tr><td>{@code T[s+i] == P[i]}</td><td>Verificación exacta y contador {@code comparaciones}</td>
- *       <td>108-110</td></tr>
+ *       <td>{@code hashSinInicial} y actualización de {@code hashVentana} en
+ *       {@link #buscarTodas}</td></tr>
+ *   <tr><td>{@code H(ventana) == H(P)}</td><td>{@code hashCoincide} en {@link #buscarTodas}</td></tr>
+ *   <tr><td>{@code T[s+i] == P[i]}</td>
+ *       <td>Verificación exacta y contador {@code comparaciones} en {@link #buscarTodas}</td></tr>
  * </table>
  *
- * <p>Complejidad teórica (DF §7.4): preprocesamiento {@code O(m)} y recorrido rodante {@code
- * O(n-m+1)}; bajo distribución uniforme de hashes se espera {@code O(n + m)} total. En el peor
- * caso, las colisiones verificadas carácter a carácter cuestan {@code O(n*m)}. El espacio auxiliar
- * es {@code O(1)} sin contar posiciones ni eventos de traza; la traza se desactiva por defecto.
+ * <p>Complejidad: preprocesamiento {@code O(m)} y recorrido rodante {@code O(n-m+1)}; bajo
+ * distribución uniforme de hashes se espera {@code O(n + m)} total. En el peor caso, las colisiones
+ * verificadas carácter a carácter cuestan {@code O(n*m)}. El espacio auxiliar es {@code O(1)} sin
+ * contar posiciones ni eventos de traza; la traza se desactiva por defecto.
  */
 public final class RabinKarpMatcher implements StringMatcher {
 
@@ -46,6 +49,17 @@ public final class RabinKarpMatcher implements StringMatcher {
         this.traceRecorder = Objects.requireNonNull(traceRecorder, "traceRecorder");
     }
 
+    /**
+     * Busca todas las posiciones de {@code P} en {@code T} mediante hashes rodantes.
+     *
+     * <p>Retira {@code T[s] * B^(m-1)} antes de multiplicar el hash de ventana por {@code B} y
+     * añadir el nuevo carácter. Cada hash coincidente se verifica carácter a carácter; las
+     * posiciones son índices UTF-16.
+     *
+     * @param texto texto {@code T} en el que buscar
+     * @param patron patrón {@code P}
+     * @return posiciones, tiempos, comparaciones y métricas de colisión
+     */
     @Override
     public MatchResult buscarTodas(String texto, String patron) {
         Objects.requireNonNull(texto, "texto");

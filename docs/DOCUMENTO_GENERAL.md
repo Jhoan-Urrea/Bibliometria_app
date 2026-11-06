@@ -1,6 +1,6 @@
 # Documento general del proyecto
 
-> Documento único para el diseño, la arquitectura, la formulación matemática y la trazabilidad del proyecto. La documentación de cada módulo se limita a su contrato, alcance y justificación técnica/matemática en el `README.md` de dicho módulo.
+> Documento rector para el diseño, la arquitectura, las definiciones matemáticas generales y la trazabilidad del proyecto. Las fórmulas específicas de cada algoritmo se detallan en la documentación técnica por requerimiento y se mapean a su implementación en los Javadocs de `core`.
 
 ## 1. Identificación y propósito
 
@@ -84,7 +84,7 @@ tools también lee artefactos guardados de benchmark mediante archivos, sin depe
 
 ## 3. Formulación matemática v2.0
 
-> Esta sección es la fuente única de la formulación. Las fórmulas siguientes son la plantilla metodológica inicial y deben ratificarse con las fuentes, definiciones operativas y decisiones del proyecto antes de usarse como resultados científicos.
+> Esta sección fija las definiciones matemáticas generales del proyecto. Las fórmulas algorítmicas detalladas y sus convenciones se encuentran en los documentos técnicos de cada requerimiento; toda formulación debe ratificarse con las fuentes y decisiones metodológicas antes de usarse como resultado científico.
 
 ### 3.1 Notación y datos
 
@@ -137,7 +137,8 @@ Una red bibliográfica se representa como \(G=(V,E,W)\), donde los nodos y las a
 | P2.10 | F2 / Búsqueda exacta | Búsqueda y resaltado de coincidencias sobre textos del corpus | AR-F2-08 | `core` | Posiciones por algoritmo y bandera de paridad por artículo | `CorpusSearchServiceTest` |
 | P2.11 | F2 / Búsqueda exacta | Registro y exportación JSON de pasos internos | AR-F2-09 | `core` | Trazas de LPS, tablas BM y hashes RK exportables | `TraceRecorderTest` |
 | P2.12 | F2 / Búsqueda exacta | Evidencia reproducible del caso de estudio 3 | AR-F2-10 | `docs/casos-de-estudio/ce3` | Patrón, corpus, posiciones, fragmentos y limitaciones documentados | Informe CE3 y traza JSON |
-| P2.13 | F2 / Búsqueda exacta | Correspondencia de fórmulas, código y complejidad | AR-F2-11 | `core` | Javadocs relacionan variables DF §7 con líneas Java y anotan cotas de §7.4 | Javadocs de KMP, Boyer-Moore y Rabin-Karp |
+| P2.13 | F2 / Búsqueda exacta | Correspondencia de fórmulas, código y complejidad | AR-F2-11 | `core` | Javadocs relacionan variables algorítmicas con métodos/variables Java y documentan complejidad; no se atribuyen a §§7/7.4, que no contienen estas fórmulas en la versión actual de este documento | Javadocs de KMP, Boyer-Moore y Rabin-Karp; [caso de estudio 3](casos-de-estudio/ce3/README.md) |
+| P2.15 | F2 / Similitud y clustering | Mapeo notacional de métricas, distancias y enlaces a implementación | AR-F2-13 | `core` | Javadocs de cada clase indican magnitudes, expresión matemática y variables/métodos que la implementan, en concordancia con las especificaciones técnicas | Javadocs de similitud y clustering; [diseño de similitud](final/documento-diseno.md); [implementación Req. 2](req/req2/implementacion-req2.md) |
 | P2.14 | F2 / Búsqueda exacta | Gate de calidad y cierre | AR-F2-12 | `core` | `mvn spotless:apply` limpio; `mvn clean verify` en verde; cobertura `core.matching` >= 85 % | Build Maven y JaCoCo |
 | P3.1 | F3 / Semántica | Generación o consumo de embeddings | AR-F3-01 | `embeddings` | Dimensión, modelo y fallos quedan explícitos y trazables | Pruebas y metadatos |
 | P4.1 | F4 / API | Casos de uso y contratos HTTP | AR-F4-01 | `api` | Validación de entrada y respuestas documentadas | Pruebas de API |
@@ -145,6 +146,11 @@ Una red bibliográfica se representa como \(G=(V,E,W)\), donde los nodos y las a
 | P6.1 | F6 / Validación | Rendimiento, reproducibilidad y entrega | AR-F6-01 | `benchmark` | Resultados reproducibles y criterios de aceptación medidos | Reporte de benchmark |
 
 Las filas son identificadores iniciales de trazabilidad; cada paso ejecutable debe tener una incidencia con ID, artefacto, módulo y criterios de aceptación. Mantener esta matriz sincronizada con los issues y los cambios entregados.
+
+El documento de formulación externo mencionado en los antecedentes no está incluido como fuente
+independiente en este repositorio. Por ello, las referencias normativas citadas en Javadocs deben
+apuntar a documentación versionada disponible; no se afirma cotejo literal con una versión
+externa del DF que no forme parte de esta revisión.
 
 ## 5. Formulación y entregables por fases
 

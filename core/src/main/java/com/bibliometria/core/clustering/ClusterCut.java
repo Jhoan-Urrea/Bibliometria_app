@@ -70,14 +70,14 @@ public final class ClusterCut {
         int[] minimumLeafByRoot = new int[numLeaves];
         java.util.Arrays.fill(minimumLeafByRoot, Integer.MAX_VALUE);
         for (int leaf = 0; leaf < numLeaves; leaf++) {
-            int root = unionFind.find(leaf);
+            int root = unionFind.rootOf(leaf);
             minimumLeafByRoot[root] = Math.min(minimumLeafByRoot[root], leaf);
         }
 
         int[] labelByRoot = new int[numLeaves];
         int nextLabel = 0;
         for (int leaf = 0; leaf < numLeaves; leaf++) {
-            int root = unionFind.find(leaf);
+            int root = unionFind.rootOf(leaf);
             if (minimumLeafByRoot[root] == leaf) {
                 labelByRoot[root] = nextLabel++;
             }
@@ -88,7 +88,7 @@ public final class ClusterCut {
 
         int[] labels = new int[numLeaves];
         for (int leaf = 0; leaf < numLeaves; leaf++) {
-            labels[leaf] = labelByRoot[unionFind.find(leaf)];
+            labels[leaf] = labelByRoot[unionFind.rootOf(leaf)];
         }
         return labels;
     }
@@ -106,16 +106,16 @@ public final class ClusterCut {
             }
         }
 
-        private int find(int value) {
+        private int rootOf(int value) {
             if (parent[value] != value) {
-                parent[value] = find(parent[value]);
+                parent[value] = rootOf(parent[value]);
             }
             return parent[value];
         }
 
         private int union(int first, int second) {
-            int rootFirst = find(first);
-            int rootSecond = find(second);
+            int rootFirst = rootOf(first);
+            int rootSecond = rootOf(second);
             if (rootFirst == rootSecond) {
                 throw new IllegalArgumentException("Merge attempts to join overlapping clusters.");
             }
