@@ -1,0 +1,24 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Maven
+target/
+
+# Frontend
+node_modules/
+dist/
+web/test-results/
+web/playwright-report/
+
+# Environment and local data
+.env
+.env.*
+!.env.example
+deploy/smoke/tls.crt
+deploy/smoke/tls.key
+data/raw/
+
+# Logs
+*.log
