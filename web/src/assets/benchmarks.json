@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "source": "docs/evidence/f6/informe-benchmark.md",
+  "metadata": {
+    "jdkVersion": "OpenJDK 21.0.12.1",
+    "warmupIterations": 2000,
+    "measuredRuns": 30,
+    "timestamp": null,
+    "environment": "Linux x86_64 (kernel 7.0.0-42-generic)",
+    "notes": [
+      "El informe no registra la fecha exacta de ejecución; timestamp se deja null.",
+      "Las muestras son 30 por caso y algoritmo, no 500.",
+      "No se reportó memoria asignada."
+    ]
+  },
+  "scenarios": {
+    "E1": {
+      "title": "Dominio Real N=20",
+      "description": "Búsqueda exacta sobre el corpus bibliométrico concatenado (n=36.185 unidades UTF-16), con un patrón presente y otro ausente.",
+      "inputs": {
+        "articleCount": 20,
+        "textLength": 36185,
+        "cases": [
+          {
+            "id": "absent",
+            "label": "Patrón ausente",
+            "pattern": "__BENCHMARK_PATTERN_ABSENT__",
+            "patternLength": 28,
+            "metrics": [
+              {
+                "algorithm": "Boyer-Moore",
+                "category": "String Matching",
+                "timeMedianMs": 0.03861,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              },
+              {
+                "algorithm": "KMP",
+                "category": "String Matching",
+                "timeMedianMs": 0.0907995,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              },
+              {
+                "algorithm": "Rabin-Karp",
+                "category": "String Matching",
+                "timeMedianMs": 0.54862,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              }
+            ]
+          },
+          {
+            "id": "present",
+            "label": "Patrón presente",
+            "pattern": "artificial intelligence",
+            "patternLength": 23,
+            "metrics": [
+              {
+                "algorithm": "Boyer-Moore",
+                "category": "String Matching",
+                "timeMedianMs": 0.0668775,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              },
+              {
+                "algorithm": "KMP",
+                "category": "String Matching",
+                "timeMedianMs": 0.148177,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              },
+              {
+                "algorithm": "Rabin-Karp",
+                "category": "String Matching",
+                "timeMedianMs": 0.5543135,
+                "timeIqrMs": null,
+                "comparisonsPerChar": null,
+                "memoryAllocatedMb": null
+              }
+            ]
+          }
+        ],
+        "metrics": []
+      }
+    },
+    "E2": {
+      "title": "Escala Sintética",
+      "description": "El informe disponible midió n=256 y n=1.024 unidades UTF-16; no contiene mediciones en 10⁴–10⁶ caracteres.",
+      "inputs": {
+        "targetTextLengthRange": [10000, 1000000],
+        "observedTextLengths": [256, 1024],
+        "patternLengths": [8, 24],
+        "alphabetSizes": [2, 16],
+        "metrics": [
+          {
+            "algorithm": "KMP",
+            "category": "String Matching",
+            "timeMedianMs": null,
+            "timeIqrMs": null,
+            "comparisonsPerChar": null,
+            "comparisonsPerCharRange": [1.05, 1.5],
+            "memoryAllocatedMb": null
+          },
+          {
+            "algorithm": "Boyer-Moore",
+            "category": "String Matching",
+            "timeMedianMs": null,
+            "timeIqrMs": null,
+            "comparisonsPerChar": null,
+            "comparisonsPerCharRange": [0.086, 0.582],
+            "memoryAllocatedMb": null
+          },
+          {
+            "algorithm": "Rabin-Karp",
+            "category": "String Matching",
+            "timeMedianMs": null,
+            "timeIqrMs": null,
+            "comparisonsPerChar": null,
+            "comparisonsPerCharRange": [0, 0.031],
+            "memoryAllocatedMb": null
+          }
+        ]
+      }
+    },
+    "E3": {
+      "title": "Caso Adversarial aⁿ vs aᵐ",
+      "description": "Texto y patrón de un carácter repetido; valores exactos para n=512, m=16, σ=1.",
+      "inputs": {
+        "observedTextLengths": [256, 512],
+        "patternLengths": [8, 16],
+        "measurement": {
+          "textLength": 512,
+          "patternLength": 16,
+          "alphabetSize": 1,
+          "metrics": [
+            {
+              "algorithm": "KMP",
+              "category": "String Matching",
+              "timeMedianMs": 0.010482,
+              "timeIqrMs": null,
+              "comparisons": 512,
+              "comparisonsPerChar": 1,
+              "memoryAllocatedMb": null
+            },
+            {
+              "algorithm": "Boyer-Moore",
+              "category": "String Matching",
+              "timeMedianMs": 0.054629,
+              "timeIqrMs": null,
+              "comparisons": 7952,
+              "comparisonsPerChar": 15.53125,
+              "memoryAllocatedMb": null
+            },
+            {
+              "algorithm": "Rabin-Karp",
+              "category": "String Matching",
+              "timeMedianMs": 0.029912,
+              "timeIqrMs": null,
+              "comparisons": 7952,
+              "comparisonsPerChar": 15.53125,
+              "memoryAllocatedMb": null
+            }
+          ]
+        },
+        "metrics": []
+      }
+    }
+  }
+}

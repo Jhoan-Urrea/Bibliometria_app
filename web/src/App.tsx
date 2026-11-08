@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
-import { api } from './api/client';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  HeaderStatus,
+  type HeaderApiStatus,
+} from './components/common/HeaderStatus';
 import { AboutPage } from './pages/AboutPage';
 import { ClusteringPage } from './pages/ClusteringPage';
 import { HomePage } from './pages/HomePage';
@@ -32,14 +35,14 @@ export function App() {
   const [status, setStatus] = useState<BackendStatus>('checking');
   const [page, setPage] = useState<PageId>(() => getPageFromHash());
 
-  useEffect(() => {
-    const controller = new AbortController();
-    api.health(controller.signal)
-      .then(() => setStatus('available'))
-      .catch((error: unknown) => {
-        if (!(error instanceof Error && error.name === 'AbortError')) setStatus('unavailable');
-      });
-    return () => controller.abort();
+  const handleApiStatusChange = useCallback((apiStatus: HeaderApiStatus) => {
+    setStatus(
+      apiStatus === 'online'
+        ? 'available'
+        : apiStatus === 'offline'
+          ? 'unavailable'
+          : 'checking',
+    );
   }, []);
 
   useEffect(() => {
@@ -86,6 +89,7 @@ export function App() {
               </a>
             ))}
           </nav>
+          <HeaderStatus onStatusChange={handleApiStatusChange} />
         </div>
       </header>
       <main className="main-content" id="contenido" tabIndex={-1}>
