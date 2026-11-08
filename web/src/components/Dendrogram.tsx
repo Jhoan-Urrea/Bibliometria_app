@@ -1,6 +1,6 @@
-import { hierarchy, linkHorizontal, tree } from 'd3';
+import { hierarchy } from 'd3';
 import { useMemo } from 'react';
-import type { HierarchyPointLink, HierarchyPointNode } from 'd3';
+import type { HierarchyNode } from 'd3';
 import type { ClusteringResponse } from '../api/client';
 
 interface TreeNode {
@@ -53,44 +53,51 @@ export function Dendrogram({
       throw new Error('La respuesta no contiene un dendrograma completo.');
     }
 
-    const layout = tree<TreeNode>()
-      .nodeSize([24, 720])
-      .separation((a, b) => (a.parent === b.parent ? 1 : 1.5));
-    const hierarchyRoot = layout(hierarchy(root));
+    const hierarchyRoot = hierarchy(root);
     const leaves = hierarchyRoot.leaves();
-    const minLeafX = Math.min(...leaves.map((leaf) => leaf.x));
-    const maxLeafX = Math.max(...leaves.map((leaf) => leaf.x));
-    const leafPositions = leaves.map((leaf) => leaf.x).sort((a, b) => a - b);
-    const minimumLeafGap = Math.min(
-      Infinity,
-      ...leafPositions.slice(1).map((position, index) => position - leafPositions[index]!),
-    );
-    const verticalScale = minimumLeafGap > 0
-      ? Math.max(1, 24 / minimumLeafGap)
-      : 1;
-    hierarchyRoot.each((node) => {
-      node.x = (node.x - minLeafX) * verticalScale + 18;
+    const svgHeight = 480;
+    const positions = new Map<HierarchyNode<TreeNode>, { x: number; y: number }>();
+    leaves.forEach((leaf, index) => {
+      positions.set(leaf, { x: 25 + index * 22, y: 720 });
     });
-    const svgHeight = Math.max(360, (maxLeafX - minLeafX) * verticalScale + 36);
+    hierarchyRoot.eachAfter((node) => {
+      if (node.children) {
+        const childPositions = node.children.map((child) => positions.get(child));
+        if (childPositions.some((position) => position === undefined)) {
+          throw new Error('No fue posible asignar coordenadas a las hojas del dendrograma.');
+        }
+        positions.set(node, {
+          x: childPositions.reduce((sum, position) => sum + position!.x, 0)
+            / childPositions.length,
+          y: 0,
+        });
+      }
+    });
 
-    const maximumMergeHeight = Math.max(
-      0,
-      ...result.merges.map((merge) => merge.height),
+    const internalNodes = hierarchyRoot.descendants().filter(
+      (node) => node.data.height !== undefined,
     );
-    const heightScale = maximumMergeHeight > 0 ? maximumMergeHeight : 1;
-    if (maximumMergeHeight > 0) {
-      hierarchyRoot.each((node) => {
-        node.y =
-          node.data.height === undefined
-            ? 720
-            : 720 * (1 - node.data.height / heightScale);
-      });
-    }
+    const minimumMergeHeight = Math.min(...internalNodes.map((node) => node.data.height!));
+    const maximumMergeHeight = Math.max(...internalNodes.map((node) => node.data.height!));
+    const mergeHeightRange = maximumMergeHeight - minimumMergeHeight || 1;
+    hierarchyRoot.each((node) => {
+      const position = positions.get(node);
+      if (!position) {
+        throw new Error('No fue posible asignar coordenadas al dendrograma.');
+      }
+      if (!node.children || node.data.height === undefined) {
+        position.y = 720;
+      } else {
+        position.y =
+          80
+          + (1 - (node.data.height - minimumMergeHeight) / mergeHeightRange) * 600;
+      }
+    });
 
-    const clusterByNode = new Map<HierarchyPointNode<TreeNode>, number>();
-    const clusterRoots: HierarchyPointNode<TreeNode>[] = [];
+    const clusterByNode = new Map<HierarchyNode<TreeNode>, number>();
+    const clusterRoots: HierarchyNode<TreeNode>[] = [];
     if (cutHeight !== undefined) {
-      const findCutClusters = (node: HierarchyPointNode<TreeNode>) => {
+      const findCutClusters = (node: HierarchyNode<TreeNode>) => {
         if (
           !node.children
           || (node.data.height !== undefined && node.data.height <= cutHeight)
@@ -103,7 +110,7 @@ export function Dendrogram({
       findCutClusters(hierarchyRoot);
 
       clusterRoots.forEach((clusterRoot, clusterIndex) => {
-        const assignCluster = (node: HierarchyPointNode<TreeNode>) => {
+        const assignCluster = (node: HierarchyNode<TreeNode>) => {
           clusterByNode.set(node, clusterIndex);
           node.children?.forEach(assignCluster);
         };
@@ -111,38 +118,44 @@ export function Dendrogram({
       });
     }
 
-    const linkPath = linkHorizontal<
-      unknown,
-      HierarchyPointLink<TreeNode>,
-      HierarchyPointNode<TreeNode>
-    >()
-      .x((node) => node.y)
-      .y((node) => node.x);
     return {
       svgHeight,
       cutX:
         cutHeight === undefined
           ? null
-          : maximumMergeHeight === 0
-            ? 0
-            : 24
-              + 720
-                * (1 - Math.max(0, Math.min(cutHeight, maximumMergeHeight)) / heightScale),
+          : maximumMergeHeight > minimumMergeHeight
+            ? 80
+              + (
+                1
+                - (
+                  Math.max(minimumMergeHeight, Math.min(cutHeight, maximumMergeHeight))
+                  - minimumMergeHeight
+                ) / mergeHeightRange
+              ) * 600
+            : cutHeight >= maximumMergeHeight ? 80 : 680,
       links: hierarchyRoot.links(),
       nodes: hierarchyRoot.descendants(),
       clusterByNode,
-      path: (link: HierarchyPointLink<TreeNode>) => linkPath(link) ?? '',
-      maximumMergeHeight,
+      path: (source: HierarchyNode<TreeNode>, target: HierarchyNode<TreeNode>) => {
+        const sourcePosition = positions.get(source);
+        const targetPosition = positions.get(target);
+        if (!sourcePosition || !targetPosition) {
+          throw new Error('No fue posible construir una rama del dendrograma.');
+        }
+        return `M ${sourcePosition.y} ${sourcePosition.x} V ${targetPosition.x} H ${targetPosition.y}`;
+      },
+      positions,
     };
   }, [cutHeight, result]);
 
   return (
-    <div className="dendrogram-scroll">
+    <div className="dendrogram-container dendrogram-scroll">
       <svg
         aria-labelledby="dendrogram-title dendrogram-description"
         className="dendrogram dendrogram__svg"
         role="img"
-        viewBox={`0 0 920 ${chart.svgHeight}`}
+        viewBox={`0 0 850 ${chart.svgHeight}`}
+        preserveAspectRatio="xMinYMin meet"
       >
         <title id="dendrogram-title">Dendrograma de agrupamiento</title>
         <desc id="dendrogram-description">
@@ -152,7 +165,7 @@ export function Dendrogram({
             ? ` La línea vertical señala el corte de altura ${cutHeight.toFixed(4)}.`
             : ''}
         </desc>
-        <g transform="translate(24,18)">
+        <g>
           {chart.links.map((link, index) => (
             <path
               className={[
@@ -163,7 +176,7 @@ export function Dendrogram({
                   ? 'dendrogram__link--active'
                   : '',
               ].filter(Boolean).join(' ')}
-              d={chart.path(link)}
+              d={chart.path(link.source, link.target)}
               key={`${link.source.data.label}-${link.target.data.label}-${index}`}
               style={{
                 stroke: hoveredStepIndex === link.source.data.mergeIndex
@@ -178,12 +191,12 @@ export function Dendrogram({
           {chart.cutX !== null && (
             <g className="dendrogram__cut" aria-hidden="true">
               <line
-                x1={chart.cutX - 24}
-                x2={chart.cutX - 24}
+                x1={chart.cutX}
+                x2={chart.cutX}
                 y1={0}
-                y2={chart.svgHeight - 36}
+                y2={chart.svgHeight - 40}
               />
-              <text x={chart.cutX - 18} y={14}>
+              <text x={chart.cutX + 6} y={14}>
                 α = {cutHeight?.toFixed(4)}
               </text>
             </g>
@@ -207,7 +220,7 @@ export function Dendrogram({
                   : `Paso ${node.data.mergeIndex + 1}: fusión`
               }
               key={`${node.data.label}-${node.depth}`}
-              transform={`translate(${node.y},${node.x})`}
+              transform={`translate(${chart.positions.get(node)?.y},${chart.positions.get(node)?.x})`}
               onBlur={() => {
                 if (node.data.mergeIndex !== undefined) onStepHover?.(null);
               }}

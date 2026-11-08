@@ -301,6 +301,10 @@ a:hover {
   background: #ffffff;
 }
 
+.dendrogram-scroll {
+  overflow-y: hidden;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -358,15 +362,24 @@ a:hover {
 }
 
 .dendrogram {
-  display: block;
-  width: max(100%, 920px);
-  height: auto;
-  overflow-x: auto;
+  overflow: visible;
   color: var(--color-ink);
 }
 
 .dendrogram__svg {
-  min-width: 920px;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dendrogram-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 920px;
+  height: auto;
+  margin: 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .dendrogram__link {

@@ -41,27 +41,42 @@ describe('Dendrogram', () => {
     expect(container.querySelectorAll('path.dendrogram__link')).toHaveLength(2);
   });
 
-  it('keeps at least 24 SVG units between adjacent leaves for every linkage and colors cut clusters', () => {
+  it('fits leaves in a compact frame and spreads merge nodes across the canvas', () => {
     for (const linkage of ['single', 'complete', 'average'] as const) {
       const { container, unmount } = render(
         <Dendrogram cutHeight={0.1} result={makeTwentyArticleResult(linkage)} />,
       );
-      const leafCoordinates = Array.from(
-        container.querySelectorAll<SVGGElement>('.dendrogram__node'),
-      )
-        .filter((node) => node.querySelector('text') !== null)
+      const nodes = Array.from(container.querySelectorAll<SVGGElement>('.dendrogram__node'));
+      const leafNodes = nodes.filter((node) => node.querySelector('text') !== null);
+      const leafCoordinates = leafNodes
         .map((node) => Number(node.getAttribute('transform')?.match(/,([\d.]+)\)/)?.[1]))
         .sort((a, b) => a - b);
+      const rootNode = container.querySelector<SVGGElement>('[aria-label="Paso 19: fusión"]');
+      const rootX = Number(rootNode?.getAttribute('transform')?.match(/^translate\(([\d.]+)/)?.[1]);
+      const internalXs = nodes
+        .filter((node) => node.getAttribute('aria-label') !== null)
+        .map((node) => Number(node.getAttribute('transform')?.match(/^translate\(([\d.]+)/)?.[1]));
       const colors = new Set(
         Array.from(container.querySelectorAll<SVGCircleElement>('.dendrogram__node circle'))
           .map((circle) => circle.style.fill)
           .filter(Boolean),
       );
+      const svg = container.querySelector('svg');
 
       expect(leafCoordinates).toHaveLength(20);
-      expect(leafCoordinates.slice(1).every((coordinate, index) =>
-        coordinate - leafCoordinates[index]! >= 24,
+      expect(leafCoordinates).toEqual(
+        Array.from({ length: 20 }, (_, index) => 25 + index * 22),
+      );
+      expect(svg?.getAttribute('viewBox')).toBe('0 0 850 480');
+      expect(svg?.getAttribute('preserveAspectRatio')).toBe('xMinYMin meet');
+      expect(rootX).toBeCloseTo(80, 5);
+      expect(Math.min(...internalXs)).toBeGreaterThanOrEqual(80);
+      expect(Math.max(...internalXs)).toBeGreaterThan(300);
+      expect(leafNodes.every((node) =>
+        Number(node.getAttribute('transform')?.match(/^translate\(([\d.]+)/)?.[1]) === 720,
       )).toBe(true);
+      expect(container.querySelector('path.dendrogram__link')?.getAttribute('d'))
+        .toMatch(/^M [\d.]+ [\d.]+ V [\d.]+ H [\d.]+$/);
       expect(colors.size).toBeGreaterThan(1);
       unmount();
     }
